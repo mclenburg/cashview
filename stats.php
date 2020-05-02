@@ -64,9 +64,9 @@
            imagefill($diagrammAll, 0, 0, $weiss);
            imagefill($diagramm30, 0, 0, $weiss);
 
-           arsort($arrayAll);
+           //arsort($arrayAll);
            $gesamtAll = array_sum($arrayAll);
-           arsort($array30);
+           //arsort($array30);
            $gesamt30 = array_sum($array30);
 
            $i = 0;
