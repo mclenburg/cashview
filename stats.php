@@ -78,8 +78,8 @@
              $winkel = $start + $value*360/$gesamtAll;
 
              $color = "color".$i;
-
              imagefilledarc($diagrammAll, $start_x, $start_y, $radius, $radius, $start, $winkel, $$color, IMG_ARC_PIE);
+             imagearc($diagrammAll, $start_x, $start_y, $radius, $radius, $start, $winkel, $$color);  //because gap
 
              $unterkante = $rand_oben+$punktbreite+($i-1)*($punktbreite+$abstand);
              imagefilledrectangle($diagrammAll, $rand_links, $rand_oben+($i-1)*($punktbreite+$abstand), $rand_links+$punktbreite, $unterkante, $$color);
@@ -96,7 +96,8 @@
 
              $color = "color".$i;
 
-             imagefilledarc($diagramm30, $start_x, $start_y, $radius, $radius, $start, $winkel, $$color, IMG_ARC_PIE);
+             imagefilledarc($diagramm30, $start_x, $start_y, $radius, $radius, $start, $winkel, $$color, IMG_ARC_PIE | IMG_ARC_EDGED);
+             imagearc($diagramm30, $start_x, $start_y, $radius, $radius, $start, $winkel, $$color);  //because gap
 
              $unterkante = $rand_oben+$punktbreite+($i-1)*($punktbreite+$abstand);
              imagefilledrectangle($diagramm30, $rand_links, $rand_oben+($i-1)*($punktbreite+$abstand), $rand_links+$punktbreite, $unterkante, $$color);
