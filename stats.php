@@ -42,7 +42,7 @@
            }
            $jetzt = $datum = date("d.m.Y");
 
-           $breite = 400;
+           $breite = 350;
            $hoehe = 250;
            $radius = 200;
            $start_x = ($breite/3)*2;
