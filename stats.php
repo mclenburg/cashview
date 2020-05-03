@@ -29,6 +29,13 @@
                $array30[$row["bez"]] = $row["summe"];
            }
 
+           $queryLine = "select sum(trans.wert) summe, DATE(trans.Datum) datum from transaktionen trans WHERE trans.Datum > DATE_SUB(CURRENT_DATE(),INTERVAL 30 DAY) group by DATE(Datum) ORDER BY Datum";
+           $resultLine = mysqli_query($GLOBALS["___mysqli_ston"], $queryLine)or die("$queryLine " .mysqli_error($GLOBALS["___mysqli_ston"]));
+           while( $row = mysqli_fetch_assoc( $resultLine)){
+             $arrayLine[$row["datum"]] = $row["summe"];
+           }
+           $jetzt = $datum = date("d.m.Y");
+
            $breite = 400;
            $hoehe = 250;
            $radius = 200;
@@ -43,6 +50,7 @@
 
            $diagrammAll = imagecreatetruecolor($breite, $hoehe);
            $diagramm30 = imagecreatetruecolor($breite, $hoehe);
+           $diagrammLine = imagecreatetruecolor($breite, $hoehe+30);
 
            $schwarz = imagecolorallocate($diagrammAll, 0, 0, 0);
            $weiss = imagecolorallocate($diagrammAll, 255, 255, 255);
@@ -63,10 +71,9 @@
 
            imagefill($diagrammAll, 0, 0, $weiss);
            imagefill($diagramm30, 0, 0, $weiss);
+           imagefill($diagrammLine, 0, 0, $weiss);
 
-           //arsort($arrayAll);
            $gesamtAll = array_sum($arrayAll);
-           //arsort($array30);
            $gesamt30 = array_sum($array30);
 
            $i = 0;
@@ -79,7 +86,7 @@
 
              $color = "color".$i;
              imagesetthickness ( $diagrammAll , 3 );
-             for($rad = 0; $rad <= 100; $rad++) {
+             for($rad = 0; $rad <= 50; $rad++) {
                imagearc($diagrammAll, $start_x, $start_y, ($radius-$rad), ($radius-$rad), $start, $winkel, $$color);  //because gap
              }
              $unterkante = $rand_oben+$punktbreite+($i-1)*($punktbreite+$abstand);
@@ -97,7 +104,7 @@
 
              $color = "color".$i;
              imagesetthickness ( $diagramm30 , 3 );
-             for($rad = 0; $rad <= 100; $rad++) {
+             for($rad = 0; $rad <= 50; $rad++) {
                imagearc($diagramm30, $start_x, $start_y, ($radius-$rad), ($radius-$rad), $start, $winkel, $$color);  //because gap
              }
              $unterkante = $rand_oben+$punktbreite+($i-1)*($punktbreite+$abstand);
@@ -105,6 +112,56 @@
              imagettftext($diagramm30, $schriftgroesse, 0, $rand_links+$punktbreite+5, $unterkante-$punktbreite/2+$schriftgroesse/2, $schwarz, "media/arial.ttf", $key." ".round($value*100/$gesamt30, 1)." %");
            }
 
+           //maxGuthaben ermitteln, ausgehend von 0
+           $maxGuthaben = 0;
+           foreach($arrayLine as $key => $value) {
+             if($value < 0) {
+               $maxGuthaben += (0-$value);
+             }
+           }
+
+           //Liniendiagramm bauen
+           imageline($diagrammLine, ($rand_links+40), $rand_oben, ($rand_links+40), ($hoehe-$rand_oben+3), $schwarz); //Y-Achse
+           imageline($diagrammLine, ($rand_links+37), ($hoehe-$rand_oben), ($breite-($rand_links+40)), ($hoehe-$rand_oben), $schwarz); //X-Achse
+
+           //Y-Achse beschriften
+           imagettftext($diagrammLine, $schriftgroesse, 90, $rand_links, $hoehe/2+$schriftgroesse/2, $schwarz, "media/arial.ttf", "Guthaben");
+           $abstandY = floor(($hoehe-$rand_oben)/($maxGuthaben+50)*50);
+           $i = 0;
+           $lichtgrau = imagecolorallocate($diagrammLine, 200, 200, 200);
+           for($wert = $maxGuthaben; $wert > 0; ($wert=$wert-50)) {
+             imagettftext($diagrammLine, $schriftgroesse, 0, $rand_links+5, ($rand_oben+($abstandY*$i)) , $schwarz, "media/arial.ttf", $wert);
+             imageline($diagrammLine, ($rand_links+37), ($rand_oben+($abstandY*$i)), ($breite-($rand_links+40)), ($rand_oben+($abstandY*$i)), $lichtgrau);
+
+             $i++;
+           }
+           imagettftext($diagrammLine, $schriftgroesse, 0, $rand_links+5, ($hoehe-$rand_oben) , $schwarz, "media/arial.ttf", "0");
+
+           //X-Achse beschriften
+           $abstandX = floor(($breite-($rand_links+40))/30);
+           for($dat=30; $dat>=0; $dat--) {
+             if($dat%5==0) {
+               $date = new DateTime("-".$dat." days");
+               imagettftext($diagrammLine, 8, 70, ($rand_links+40+$abstandX*(30-$dat)+8), ($hoehe+10) , $schwarz, "media/arial.ttf", $date->format("d.m."));
+             }
+           }
+
+           //Werte eintragen
+           $posy_alt = 0;
+           for($dat=0; $dat<=0; $dat++) {
+               foreach($arrayLine as $key => $value) {
+                 $date = new DateTime("-".$dat." days");
+                 if(strtotime($key) == strtotime($date->format("d.m.y"))) {
+                   if($posy_alt != 0) {
+                     imageline($diagrammLine, (floor($breite-($rand_links+40)/30)*$dat), floor(($hoehe-$rand_oben)/($maxGuthaben)*$value), (floor($breite-($rand_links+40)/30)*$dat+1), $posy_alt, $color1);
+                     $posy_alt = floor(($hoehe-$rand_oben)/($maxGuthaben)*$value);
+                   }
+                   else {
+                     $posy_alt = floor(($hoehe-$rand_oben)/($maxGuthaben)*$value);
+                   }
+                 }
+               }
+           }
   ?>
   <div class="container">
   	      <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
@@ -139,7 +196,22 @@
             	            </p>
             	          </div>
             	      </div>
-  </div>
+
+                      <div class="card">
+                          <div class="card-header"><h5 class="d-inline-block card-title">Verlauf (30 Tage)</h5>
+                          </div>
+                          <div class="card-body">
+                            <p class="card-text">
+              	            <?php
+                                 ob_start();
+                                 imagepng($diagrammLine);
+                                 $imagedata = ob_get_clean();
+                                 echo("<img src=\"data:image/png;base64,".base64_encode($imagedata)."\">");
+                              ?>
+              	            </p>
+              	          </div>
+              	      </div>
+    </div>
 
 </body>
 </html>
