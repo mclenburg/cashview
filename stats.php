@@ -62,6 +62,8 @@
            $weiss = imagecolorallocate($diagrammAll, 255, 255, 255);
            $schwarz30 = imagecolorallocate($diagramm30, 0, 0, 0);
            $weiss30 = imagecolorallocate($diagramm30, 255, 255, 255);
+           $yellow = imagecolorallocate($diagrammLine, 255, 250, 140);
+           $lightyellow = imagecolorallocate($diagrammLine, 255, 246, 143);
 
            $color1 = imagecolorallocate($diagrammAll, 2, 117, 216);
            $color2 = imagecolorallocate($diagrammAll, 92, 184, 92);
@@ -137,7 +139,7 @@
            imageline($diagrammLine, ($rand_links+40), 0, ($rand_links+40), ($hoehe-$rand_oben+3), $schwarz); //Y-Achse
            imageline($diagrammLine, ($rand_links+37), $posxachse, $breite, $posxachse, $schwarz); //X-Achse
            if($minGuthaben > 0) {
-             imagettftext($diagrammLine, $schriftgroesse, 0, $rand_links+5, $posxachse , $schwarz, "media/arial.ttf", round($minGuthaben,-1);
+             imagettftext($diagrammLine, $schriftgroesse, 0, $rand_links+5, $posxachse , $schwarz, "media/arial.ttf", round($minGuthaben,-1));
            }
            else {
              imagettftext($diagrammLine, $schriftgroesse, 0, $rand_links+5, $posxachse , $schwarz, "media/arial.ttf", 0);
@@ -160,11 +162,20 @@
 
            //X-Achse beschriften
            for($dat=30; $dat>=0; $dat--) {
+             $date = new DateTime("-".$dat." days");
              if($dat%5==0) {
-               $date = new DateTime("-".$dat." days");
                imagettftext($diagrammLine, 8, 70, ($rand_links+40+$xperday*(30-$dat)-8), ($hoehe+10) , $schwarz, "media/arial.ttf", $date->format("d.m."));
                imageline($diagrammLine, ($rand_links+40+$xperday*(30-$dat)), $posxachse, ($rand_links+40+$xperday*(30-$dat)), $posxachse+2, $schwarz);
              }
+             if($date->format("D") == "Sat") {
+               imagesetthickness ( $diagrammLine , $xperday );
+               imageline($diagrammLine, ($rand_links+40+$xperday*(30-$dat)), $posxachse-1, ($rand_links+40+$xperday*(30-$dat)), 0, $lightyellow);
+             }
+             if($date->format("D") == "Sun") {
+               imagesetthickness ( $diagrammLine , $xperday );
+               imageline($diagrammLine, ($rand_links+40+$xperday*(30-$dat)), $posxachse-1, ($rand_links+40+$xperday*(30-$dat)), 0, $yellow);
+             }
+             imagesetthickness ($diagrammLine , 1 );
            }
 
            //Werte eintragen
