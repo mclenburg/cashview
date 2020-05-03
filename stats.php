@@ -16,6 +16,12 @@
   	       $name = gethostbyaddr($_SERVER['REMOTE_ADDR']);
   		   ($GLOBALS["___mysqli_ston"] = mysqli_connect("192.168.5.103",  "cashview",  "cash123", "cashview"))  or die("ERROR connecting to database.");
 
+  		   $resultRest = mysqli_query($GLOBALS["___mysqli_ston"], "select sum(wert) wert from transaktionen where Datum < DATE_SUB(CURRENT_DATE(),INTERVAL 30 DAY)")or die("queryRest " .mysqli_error($GLOBALS["___mysqli_ston"]));
+  		   $rest = mysqli_fetch_assoc($resultRest)["wert"];
+  		   $resultInit = mysqli_query($GLOBALS["___mysqli_ston"], "select sum(Betrag) wert from Initialwerte")or die("queryIni " .mysqli_error($GLOBALS["___mysqli_ston"]));
+           $init = mysqli_fetch_assoc($resultInit)["wert"];
+           $rest = $init - $rest;
+
   		   $queryAll = "select sum(trans.wert) summe, kat.bez from transaktionen trans left outer join kategorien kat on trans.katID = kat.ID where wert > 0 group by katID";
   		   $query30 = "select sum(trans.wert) summe, kat.bez from transaktionen trans left outer join kategorien kat on trans.katID = kat.ID where wert > 0 and trans.Datum > DATE_SUB(CURRENT_DATE(),INTERVAL 30 DAY) group by katID";
 
@@ -112,53 +118,61 @@
              imagettftext($diagramm30, $schriftgroesse, 0, $rand_links+$punktbreite+5, $unterkante-$punktbreite/2+$schriftgroesse/2, $schwarz, "media/arial.ttf", $key." ".round($value*100/$gesamt30, 1)." %");
            }
 
-           //maxGuthaben ermitteln, ausgehend von 0
-           $maxGuthaben = 0;
+           //maxGuthaben ermitteln, ausgehend von $rest
+           $maxGuthaben = $rest;
+           $minGuthaben = $rest;
+           $tempGuthaben = $rest;
            foreach($arrayLine as $key => $value) {
-             if($value < 0) {
-               $maxGuthaben += (0-$value);
-             }
+               $tempGuthaben += (0-$value);
+               if($tempGuthaben > $maxGuthaben) $maxGuthaben = $tempGuthaben;
+               if($tempGuthaben < $minGuthaben) $minGuthaben = $tempGuthaben;
            }
 
+           $xperday = ($breite-($rand_links+40))/30;
+           $ypereuro = ($hoehe-$rand_oben)/($maxGuthaben-$minGuthaben);
+           $posxachse = $hoehe-$rand_oben-$ypereuro*(0-$minGuthaben);
+           if($posxachse > $hoehe-$rand_oben) $posxachse= ($hoehe-$rand_oben);
+
            //Liniendiagramm bauen
-           imageline($diagrammLine, ($rand_links+40), $rand_oben, ($rand_links+40), ($hoehe-$rand_oben+3), $schwarz); //Y-Achse
-           imageline($diagrammLine, ($rand_links+37), ($hoehe-$rand_oben), ($breite-($rand_links+40)), ($hoehe-$rand_oben), $schwarz); //X-Achse
+           imageline($diagrammLine, ($rand_links+40), 0, ($rand_links+40), ($hoehe-$rand_oben+3), $schwarz); //Y-Achse
+           imageline($diagrammLine, ($rand_links+37), $posxachse, $breite, $posxachse, $schwarz); //X-Achse
+           imagettftext($diagrammLine, $schriftgroesse, 0, $rand_links+5, $posxachse , $schwarz, "media/arial.ttf", 0);
 
            //Y-Achse beschriften
            imagettftext($diagrammLine, $schriftgroesse, 90, $rand_links, $hoehe/2+$schriftgroesse/2, $schwarz, "media/arial.ttf", "Guthaben");
-           $abstandY = floor(($hoehe-$rand_oben)/($maxGuthaben+50)*50);
            $i = 0;
            $lichtgrau = imagecolorallocate($diagrammLine, 200, 200, 200);
-           for($wert = $maxGuthaben; $wert > 0; ($wert=$wert-50)) {
-             imagettftext($diagrammLine, $schriftgroesse, 0, $rand_links+5, ($rand_oben+($abstandY*$i)) , $schwarz, "media/arial.ttf", $wert);
-             imageline($diagrammLine, ($rand_links+37), ($rand_oben+($abstandY*$i)), ($breite-($rand_links+40)), ($rand_oben+($abstandY*$i)), $lichtgrau);
-
+           $stepsize = 50;
+           for($wert = $minGuthaben; $wert <= $maxGuthaben; $wert+=$stepsize) {
+             if($wert <-10 || $wert > 10) {
+               imagettftext($diagrammLine, $schriftgroesse, 0, $rand_links+5, ($hoehe-$rand_oben - ($ypereuro*$i*$stepsize)) , $schwarz, "media/arial.ttf", round($wert,-1));
+               if($i>0) {
+                 imageline($diagrammLine, ($rand_links+37), ($hoehe-$rand_oben-($ypereuro*$i*$stepsize)), $breite, ($hoehe-$rand_oben-($ypereuro*$i*$stepsize)), $lichtgrau);
+               }
+             }
              $i++;
            }
-           imagettftext($diagrammLine, $schriftgroesse, 0, $rand_links+5, ($hoehe-$rand_oben) , $schwarz, "media/arial.ttf", "0");
 
            //X-Achse beschriften
-           $abstandX = floor(($breite-($rand_links+40))/30);
            for($dat=30; $dat>=0; $dat--) {
              if($dat%5==0) {
                $date = new DateTime("-".$dat." days");
-               imagettftext($diagrammLine, 8, 70, ($rand_links+40+$abstandX*(30-$dat)+8), ($hoehe+10) , $schwarz, "media/arial.ttf", $date->format("d.m."));
+               imagettftext($diagrammLine, 8, 70, ($rand_links+40+$xperday*(30-$dat)-8), ($hoehe+10) , $schwarz, "media/arial.ttf", $date->format("d.m."));
+               imageline($diagrammLine, ($rand_links+40+$xperday*(30-$dat)), $posxachse, ($rand_links+40+$xperday*(30-$dat)), $posxachse+2, $schwarz);
              }
            }
 
            //Werte eintragen
-           $posy_alt = 0;
-           for($dat=0; $dat<=0; $dat++) {
+           $posy_alt = $hoehe-$rand_oben-($ypereuro*$rest);
+           $dat_alt = 30;
+           for($dat=29; $dat>=1; $dat--) {
                foreach($arrayLine as $key => $value) {
                  $date = new DateTime("-".$dat." days");
-                 if(strtotime($key) == strtotime($date->format("d.m.y"))) {
-                   if($posy_alt != 0) {
-                     imageline($diagrammLine, (floor($breite-($rand_links+40)/30)*$dat), floor(($hoehe-$rand_oben)/($maxGuthaben)*$value), (floor($breite-($rand_links+40)/30)*$dat+1), $posy_alt, $color1);
-                     $posy_alt = floor(($hoehe-$rand_oben)/($maxGuthaben)*$value);
-                   }
-                   else {
-                     $posy_alt = floor(($hoehe-$rand_oben)/($maxGuthaben)*$value);
-                   }
+                 if(strtotime($key) == strtotime($date->format("yy-m-d"))) {
+                     $rest -= $value;
+                     imageline($diagrammLine, ($rand_links+40)+$xperday*(30-$dat_alt), $posy_alt, ($rand_links+40)+$xperday*(30-$dat), $hoehe-$rand_oben-($ypereuro*$rest), $color1);
+                     $posy_alt = $hoehe-$rand_oben-($ypereuro*$rest);
+                     $dat_alt = $dat;
                  }
                }
            }
