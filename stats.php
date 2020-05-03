@@ -30,7 +30,7 @@
            }
 
            $breite = 400;
-           $hoehe = 300;
+           $hoehe = 250;
            $radius = 200;
            $start_x = ($breite/3)*2;
            $start_y = $hoehe/2;
@@ -78,9 +78,10 @@
              $winkel = $start + $value*360/$gesamtAll;
 
              $color = "color".$i;
-             imagefilledarc($diagrammAll, $start_x, $start_y, $radius, $radius, $start, $winkel, $$color, IMG_ARC_PIE);
-             imagearc($diagrammAll, $start_x, $start_y, $radius, $radius, $start, $winkel, $$color);  //because gap
-
+             imagesetthickness ( $diagrammAll , 3 );
+             for($rad = 0; $rad <= 100; $rad++) {
+               imagearc($diagrammAll, $start_x, $start_y, ($radius-$rad), ($radius-$rad), $start, $winkel, $$color);  //because gap
+             }
              $unterkante = $rand_oben+$punktbreite+($i-1)*($punktbreite+$abstand);
              imagefilledrectangle($diagrammAll, $rand_links, $rand_oben+($i-1)*($punktbreite+$abstand), $rand_links+$punktbreite, $unterkante, $$color);
              imagettftext($diagrammAll, $schriftgroesse, 0, $rand_links+$punktbreite+5, $unterkante-$punktbreite/2+$schriftgroesse/2, $schwarz, "media/arial.ttf", $key." ".round($value*100/$gesamtAll, 1)." %");
@@ -95,10 +96,10 @@
              $winkel = $start + $value*360/$gesamt30;
 
              $color = "color".$i;
-
-             imagefilledarc($diagramm30, $start_x, $start_y, $radius, $radius, $start, $winkel, $$color, IMG_ARC_PIE | IMG_ARC_EDGED);
-             imagearc($diagramm30, $start_x, $start_y, $radius, $radius, $start, $winkel, $$color);  //because gap
-
+             imagesetthickness ( $diagramm30 , 3 );
+             for($rad = 0; $rad <= 100; $rad++) {
+               imagearc($diagramm30, $start_x, $start_y, ($radius-$rad), ($radius-$rad), $start, $winkel, $$color);  //because gap
+             }
              $unterkante = $rand_oben+$punktbreite+($i-1)*($punktbreite+$abstand);
              imagefilledrectangle($diagramm30, $rand_links, $rand_oben+($i-1)*($punktbreite+$abstand), $rand_links+$punktbreite, $unterkante, $$color);
              imagettftext($diagramm30, $schriftgroesse, 0, $rand_links+$punktbreite+5, $unterkante-$punktbreite/2+$schriftgroesse/2, $schwarz, "media/arial.ttf", $key." ".round($value*100/$gesamt30, 1)." %");
