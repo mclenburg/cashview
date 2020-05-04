@@ -181,7 +181,8 @@
            //Werte eintragen
            $posy_alt = $hoehe-$rand_oben-($ypereuro*$rest);
            $dat_alt = 30;
-           for($dat=29; $dat>=1; $dat--) {
+           for($dat=29; $dat>=0; $dat--) {
+               $found = false;
                foreach($arrayLine as $key => $value) {
                  $date = new DateTime("-".$dat." days");
                  if(strtotime($key) == strtotime($date->format("yy-m-d"))) {
@@ -189,7 +190,12 @@
                      imageline($diagrammLine, ($rand_links+40)+$xperday*(30-$dat_alt), $posy_alt, ($rand_links+40)+$xperday*(30-$dat), $hoehe-$rand_oben-($ypereuro*$rest), $color1);
                      $posy_alt = $hoehe-$rand_oben-($ypereuro*$rest);
                      $dat_alt = $dat;
+                     $found = true;
                  }
+               }
+               if(!$found) {
+                 imageline($diagrammLine, ($rand_links+40)+$xperday*(30-$dat_alt), $posy_alt, ($rand_links+40)+$xperday*(30-$dat), $posy_alt, $color1);
+                 $dat_alt = $dat;
                }
            }
   ?>
