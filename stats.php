@@ -5,13 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <title>CashView - Die Finanz&uuml;bersicht</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
-    <link href="http://192.168.5.103/cashview/favicon.ico" rel="shortcut icon">
-    <link rel="icon" href="http://192.168.5.103/cashview/favicon.ico" type="image/ico">
+    <link href="favicon.ico" rel="shortcut icon">
+    <link rel="icon" href="favicon.ico" type="image/ico">
 </head>
 <body>
   <?php
              error_reporting(E_ALL);
              ini_set('display_errors', 1);
+
+           $anzahl_tage = date("t");
+           $heute = date("d");
+           $resttage = $anzahl_tage - $heute + 1; //plus 1, da heute ja auch noch zur Verfügung steht
 
   	       $name = gethostbyaddr($_SERVER['REMOTE_ADDR']);
   		   ($GLOBALS["___mysqli_ston"] = mysqli_connect("192.168.5.103",  "cashview",  "cash123", "cashview"))  or die("ERROR connecting to database.");
@@ -179,7 +183,7 @@
            }
 
            //Werte eintragen
-           $posy_alt = $hoehe-$rand_oben-($ypereuro*$rest);
+           $posy_alt = $posxachse-($ypereuro*$rest);
            $dat_alt = 30;
            for($dat=29; $dat>=0; $dat--) {
                $found = false;
@@ -187,8 +191,8 @@
                  $date = new DateTime("-".$dat." days");
                  if(strtotime($key) == strtotime($date->format("yy-m-d"))) {
                      $rest -= $value;
-                     imageline($diagrammLine, ($rand_links+40)+$xperday*(30-$dat_alt), $posy_alt, ($rand_links+40)+$xperday*(30-$dat), $hoehe-$rand_oben-($ypereuro*$rest), $color1);
-                     $posy_alt = $hoehe-$rand_oben-($ypereuro*$rest);
+                     imageline($diagrammLine, ($rand_links+40)+$xperday*(30-$dat_alt), $posy_alt, ($rand_links+40)+$xperday*(30-$dat), $posxachse-($ypereuro*$rest), $color1);
+                     $posy_alt = $posxachse-($ypereuro*$rest);
                      $dat_alt = $dat;
                      $found = true;
                  }
@@ -204,6 +208,17 @@
   	        <span class="navbar-brand">CashView - Statistik</span>
   	      </nav>
 
+          <div class="card">
+                        <div class="card-header"><h5 class="d-inline-block card-title">verf&uuml;gbar pro Tag</h5>
+                        </div>
+                        <div class="card-body">
+                          <p class="card-text">
+            	            <?php
+                             echo("<b>".round($rest/$resttage,2)." €</b>");
+                          ?>
+            	            </p>
+            	          </div>
+            	      </div>
           <div class="card">
               <div class="card-header"><h5 class="d-inline-block card-title">letzte 30 Tage</h5>
               </div>
