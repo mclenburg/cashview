@@ -28,7 +28,7 @@
 	         	 	 if($kommas > 1)
 	         	 	 {
 	    ?>
-	         	 	  <span style="font-size:30px;color:#ff0000;">Kein gültiger Betrag!</span>
+	         	 	  <span style="font-size:30px;color:#ff0000;">Kein gï¿½ltiger Betrag!</span>
 	    <?php
 	         	 	 }
 	         	 	 else
@@ -125,7 +125,12 @@
                     <div class="input-group-prepend">
                       <span class="input-group-text" id="betrag">Betrag</span>
                     </div>
-                    <input name="betrag" type="text" class="form-control" placeholder="100" aria-label="Betrag" aria-describedby="betrag" onKeyUp="if((event.keyCode < 48 of event.keyCode > 57) and event.keyCode != 188 and event.keyCode != 190) this.value = this.value.substr(0, this.value.length-2);">
+                    <?php
+                      $restTage = date("t")-date("d")+1;
+                      $proTag = number_format(round($plus_kum/$restTage, 2), 2, ",", "");
+
+                      echo("<input name=\"betrag\" type=\"text\" class=\"form-control\" placeholder=\"".$proTag."\" aria-label=\"Betrag\" aria-describedby=\"betrag\" onKeyUp=\"if((event.keyCode < 48 of event.keyCode > 57) and event.keyCode != 188 and event.keyCode != 190) this.value = this.value.substr(0, this.value.length-2);\">");
+                  ?>
                   </div>
                   <div class="input-group input-group-sm mb-3">
                     <div class="input-group-prepend">
