@@ -20,7 +20,7 @@
   	       $name = gethostbyaddr($_SERVER['REMOTE_ADDR']);
   		   ($GLOBALS["___mysqli_ston"] = mysqli_connect("192.168.5.103",  "cashview",  "cash123", "cashview"))  or die("ERROR connecting to database.");
 
-  		   $resultRest = mysqli_query($GLOBALS["___mysqli_ston"], "select sum(wert) wert from transaktionen where Datum < DATE_SUB(CURRENT_DATE(),INTERVAL 30 DAY)")or die("queryRest " .mysqli_error($GLOBALS["___mysqli_ston"]));
+  		   $resultRest = mysqli_query($GLOBALS["___mysqli_ston"], "select sum(wert) wert from transaktionen where Datum <= DATE_SUB(CURRENT_DATE(),INTERVAL 30 DAY)")or die("queryRest " .mysqli_error($GLOBALS["___mysqli_ston"]));
   		   $rest = mysqli_fetch_assoc($resultRest)["wert"];
   		   $resultInit = mysqli_query($GLOBALS["___mysqli_ston"], "select sum(Betrag) wert from Initialwerte")or die("queryIni " .mysqli_error($GLOBALS["___mysqli_ston"]));
            $init = mysqli_fetch_assoc($resultInit)["wert"];
