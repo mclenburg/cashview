@@ -96,14 +96,14 @@
              $start = $winkel;
              $winkel = $start + $value*360/$gesamtAll;
 
-             $color = "color".$i;
+             $color = "color".$key;
              imagesetthickness ( $diagrammAll , 3 );
              for($rad = 0; $rad <= 50; $rad++) {
                imagearc($diagrammAll, $start_x, $start_y, ($radius-$rad), ($radius-$rad), $start, $winkel, $$color);  //because gap
              }
              $unterkante = $rand_oben+$punktbreite+($i-1)*($punktbreite+$abstand);
              imagefilledrectangle($diagrammAll, $rand_links, $rand_oben+($i-1)*($punktbreite+$abstand), $rand_links+$punktbreite, $unterkante, $$color);
-             imagettftext($diagrammAll, $schriftgroesse, 0, $rand_links+$punktbreite+5, $unterkante-$punktbreite/2+$schriftgroesse/2, $schwarz, "media/arial.ttf", $key." ".round($value*100/$gesamtAll, 1)." %");
+             imagettftext($diagrammAll, $schriftgroesse, 0, $rand_links+$punktbreite+5, $unterkante-$punktbreite/2+$schriftgroesse/2, $schwarz, "media/NotoSans-Regular.ttf", $key." ".round($value*100/$gesamtAll, 1)." %");
            }
 
            $i = 0;
@@ -114,14 +114,14 @@
              $start = $winkel;
              $winkel = $start + $value*360/$gesamt30;
 
-             $color = "color".$i;
+             $color = "color".$key;
              imagesetthickness ( $diagramm30 , 3 );
              for($rad = 0; $rad <= 50; $rad++) {
                imagearc($diagramm30, $start_x, $start_y, ($radius-$rad), ($radius-$rad), $start, $winkel, $$color);  //because gap
              }
              $unterkante = $rand_oben+$punktbreite+($i-1)*($punktbreite+$abstand);
              imagefilledrectangle($diagramm30, $rand_links, $rand_oben+($i-1)*($punktbreite+$abstand), $rand_links+$punktbreite, $unterkante, $$color);
-             imagettftext($diagramm30, $schriftgroesse, 0, $rand_links+$punktbreite+5, $unterkante-$punktbreite/2+$schriftgroesse/2, $schwarz, "media/arial.ttf", $key." ".round($value*100/$gesamt30, 1)." %");
+             imagettftext($diagramm30, $schriftgroesse, 0, $rand_links+$punktbreite+5, $unterkante-$punktbreite/2+$schriftgroesse/2, $schwarz, "media/NotoSans-Regular.ttf", $key." ".round($value*100/$gesamt30, 1)." %");
            }
 
            //maxGuthaben ermitteln, ausgehend von $rest
@@ -143,20 +143,20 @@
            imageline($diagrammLine, ($rand_links+40), 0, ($rand_links+40), ($hoehe-$rand_oben+3), $schwarz); //Y-Achse
            imageline($diagrammLine, ($rand_links+37), $posxachse, $breite, $posxachse, $schwarz); //X-Achse
            if($minGuthaben > 0) {
-             imagettftext($diagrammLine, $schriftgroesse, 0, $rand_links+5, $posxachse , $schwarz, "media/arial.ttf", round($minGuthaben,-1));
+             imagettftext($diagrammLine, $schriftgroesse, 0, $rand_links+5, $posxachse , $schwarz, "media/NotoSans-Regular.ttf", round($minGuthaben,-1));
            }
            else {
-             imagettftext($diagrammLine, $schriftgroesse, 0, $rand_links+5, $posxachse , $schwarz, "media/arial.ttf", 0);
+             imagettftext($diagrammLine, $schriftgroesse, 0, $rand_links+5, $posxachse , $schwarz, "media/NotoSans-Regular.ttf", 0);
            }
 
            //Y-Achse beschriften
-           imagettftext($diagrammLine, $schriftgroesse, 90, $rand_links, $hoehe/2+$schriftgroesse/2, $schwarz, "media/arial.ttf", "Guthaben");
+           imagettftext($diagrammLine, $schriftgroesse, 90, $rand_links, $hoehe/2+$schriftgroesse/2, $schwarz, "media/NotoSans-Regular.ttf", "Guthaben");
            $i = 0;
            $lichtgrau = imagecolorallocate($diagrammLine, 200, 200, 200);
            $stepsize = 50;
            for($wert = $minGuthaben; $wert <= $maxGuthaben; $wert+=$stepsize) {
              if($wert <-10 || $wert > 10) {
-               imagettftext($diagrammLine, $schriftgroesse, 0, $rand_links+5, ($hoehe-$rand_oben - ($ypereuro*$i*$stepsize)) , $schwarz, "media/arial.ttf", round($wert,-1));
+               imagettftext($diagrammLine, $schriftgroesse, 0, $rand_links+5, ($hoehe-$rand_oben - ($ypereuro*$i*$stepsize)) , $schwarz, "media/NotoSans-Regular.ttf", round($wert,-1));
                if($i>0) {
                  imageline($diagrammLine, ($rand_links+37), ($hoehe-$rand_oben-($ypereuro*$i*$stepsize)), $breite, ($hoehe-$rand_oben-($ypereuro*$i*$stepsize)), $lichtgrau);
                }
@@ -168,7 +168,7 @@
            for($dat=30; $dat>=0; $dat--) {
              $date = new DateTime("-".$dat." days");
              if($dat%5==0) {
-               imagettftext($diagrammLine, 8, 70, ($rand_links+40+$xperday*(30-$dat)-8), ($hoehe+10) , $schwarz, "media/arial.ttf", $date->format("d.m."));
+               imagettftext($diagrammLine, 8, 70, ($rand_links+40+$xperday*(30-$dat)-8), ($hoehe+10) , $schwarz, "media/NotoSans-Regular.ttf", $date->format("d.m."));
                imageline($diagrammLine, ($rand_links+40+$xperday*(30-$dat)), $posxachse, ($rand_links+40+$xperday*(30-$dat)), $posxachse+2, $schwarz);
              }
              if($date->format("D") == "Sat") {
