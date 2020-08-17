@@ -81,6 +81,7 @@
            $color8 = imagecolorallocate($diagrammAll, 154, 40, 184);
            $color9 = imagecolorallocate($diagrammAll, 0, 255, 0);
            $color10 = imagecolorallocate($diagrammAll, 0, 0, 255);
+           $color11 = imagecolorallocate($diagrammAll, 225, 30, 255);
 
            imagefill($diagrammAll, 0, 0, $weiss);
            imagefill($diagramm30, 0, 0, $weiss);
