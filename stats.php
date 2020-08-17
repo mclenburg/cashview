@@ -26,7 +26,7 @@
            $init = mysqli_fetch_assoc($resultInit)["wert"];
            $rest = $init - $rest;
 
-  		   $queryAll = "select sum(trans.wert) summe, kat.bez from transaktionen trans left outer join kategorien kat on trans.katID = kat.ID where wert > 0 group by katID order by sortorder";
+  		   $queryAll = "select sum(trans.wert) summe, kat.bez, kat.ID from transaktionen trans left outer join kategorien kat on trans.katID = kat.ID where wert > 0 group by katID order by sortorder";
   		   $query30 = "select sum(trans.wert) summe, kat.bez from transaktionen trans left outer join kategorien kat on trans.katID = kat.ID where wert > 0 and trans.Datum > DATE_SUB(CURRENT_DATE(),INTERVAL 30 DAY) group by katID order by sortorder";
 
            $resultAll = mysqli_query($GLOBALS["___mysqli_ston"], $queryAll)or die("$queryAll " .mysqli_error($GLOBALS["___mysqli_ston"]));
@@ -34,6 +34,7 @@
 
            while( $row = mysqli_fetch_assoc( $resultAll)){
                $arrayAll[$row["bez"]] = $row["summe"];
+               $colorMap[$row["bez"]] = $row["ID"];
            }
            while( $row = mysqli_fetch_assoc( $result30)){
                $array30[$row["bez"]] = $row["summe"];
@@ -96,7 +97,7 @@
              $start = $winkel;
              $winkel = $start + $value*360/$gesamtAll;
 
-             $color = "color".$key;
+             $color = "color".$colorMap[$key];
              imagesetthickness ( $diagrammAll , 3 );
              for($rad = 0; $rad <= 50; $rad++) {
                imagearc($diagrammAll, $start_x, $start_y, ($radius-$rad), ($radius-$rad), $start, $winkel, $$color);  //because gap
@@ -114,7 +115,7 @@
              $start = $winkel;
              $winkel = $start + $value*360/$gesamt30;
 
-             $color = "color".$key;
+             $color = "color".$colorMap[$key];
              imagesetthickness ( $diagramm30 , 3 );
              for($rad = 0; $rad <= 50; $rad++) {
                imagearc($diagramm30, $start_x, $start_y, ($radius-$rad), ($radius-$rad), $start, $winkel, $$color);  //because gap
