@@ -40,7 +40,7 @@
                $array30[$row["bez"]] = $row["summe"];
            }
 
-           $queryLine = "select sum(trans.wert) summe, DATE(trans.Datum) datum from transaktionen trans WHERE trans.Datum > DATE_SUB(CURRENT_DATE(),INTERVAL 30 DAY) group by DATE(Datum) ORDER BY Datum";
+           $queryLine = "select sum(trans.wert) summe, DATE(trans.Datum) datum from transaktionen trans WHERE date(trans.Datum) > date(DATE_SUB(CURRENT_DATE(),INTERVAL 30 DAY)) group by DATE(Datum) ORDER BY Datum";
            $resultLine = mysqli_query($GLOBALS["___mysqli_ston"], $queryLine)or die("$queryLine " .mysqli_error($GLOBALS["___mysqli_ston"]));
            while( $row = mysqli_fetch_assoc( $resultLine)){
              $arrayLine[$row["datum"]] = $row["summe"];
