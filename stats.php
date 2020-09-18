@@ -184,18 +184,6 @@
              imagesetthickness ($diagrammLine , 1 );
            }
 
-           //idealen Burndown eintragen
-           $ausgangswert = $rest;
-           $idealprotag = $rest/$resttage;
-           $posy_alt = $posxachse-($ypereuro*$ausgangswert);
-           $dat_alt = 30;
-           for($dat=29; $dat>=0; $dat--) {
-           $ausgangswert -= $idealprotag;
-             imageline($diagrammLine, ($rand_links+40)+$xperday*(30-$dat_alt), $posy_alt, ($rand_links+40)+$xperday*(30-$dat), $posxachse-($ypereuro*$ausgangswert), $color10);
-             $posy_alt = $posxachse-($ypereuro*$ausgangswert);
-             $dat_alt = $dat;
-           }
-
            //Werte eintragen
            $posy_alt = $posxachse-($ypereuro*$rest);
            $dat_alt = 30;
