@@ -20,13 +20,13 @@
   	       $name = gethostbyaddr($_SERVER['REMOTE_ADDR']);
   		   ($GLOBALS["___mysqli_ston"] = mysqli_connect("192.168.5.103",  "cashview",  "cash123", "cashview"))  or die("ERROR connecting to database.");
 
-  		   $resultRest = mysqli_query($GLOBALS["___mysqli_ston"], "select sum(wert) wert from transaktionen where Datum < DATE_SUB(CURRENT_DATE(),INTERVAL 30 DAY)")or die("queryRest " .mysqli_error($GLOBALS["___mysqli_ston"]));
+  		   $resultRest = mysqli_query($GLOBALS["___mysqli_ston"], "select sum(wert) wert from transaktionen where date(Datum) <= date(DATE_SUB(CURRENT_DATE(),INTERVAL 30 DAY))")or die("queryRest " .mysqli_error($GLOBALS["___mysqli_ston"]));
   		   $rest = mysqli_fetch_assoc($resultRest)["wert"];
   		   $resultInit = mysqli_query($GLOBALS["___mysqli_ston"], "select sum(Betrag) wert from Initialwerte")or die("queryIni " .mysqli_error($GLOBALS["___mysqli_ston"]));
            $init = mysqli_fetch_assoc($resultInit)["wert"];
            $rest = $init - $rest;
 
-  		   $queryAll = "select sum(trans.wert) summe, kat.bez from transaktionen trans left outer join kategorien kat on trans.katID = kat.ID where wert > 0 group by katID order by sortorder";
+  		   $queryAll = "select sum(trans.wert) summe, kat.bez, kat.ID from transaktionen trans left outer join kategorien kat on trans.katID = kat.ID where wert > 0 group by katID order by sortorder";
   		   $query30 = "select sum(trans.wert) summe, kat.bez from transaktionen trans left outer join kategorien kat on trans.katID = kat.ID where wert > 0 and trans.Datum > DATE_SUB(CURRENT_DATE(),INTERVAL 30 DAY) group by katID order by sortorder";
 
            $resultAll = mysqli_query($GLOBALS["___mysqli_ston"], $queryAll)or die("$queryAll " .mysqli_error($GLOBALS["___mysqli_ston"]));
@@ -34,12 +34,13 @@
 
            while( $row = mysqli_fetch_assoc( $resultAll)){
                $arrayAll[$row["bez"]] = $row["summe"];
+               $colorMap[$row["bez"]] = $row["ID"];
            }
            while( $row = mysqli_fetch_assoc( $result30)){
                $array30[$row["bez"]] = $row["summe"];
            }
 
-           $queryLine = "select sum(trans.wert) summe, DATE(trans.Datum) datum from transaktionen trans WHERE trans.Datum > DATE_SUB(CURRENT_DATE(),INTERVAL 30 DAY) group by DATE(Datum) ORDER BY Datum";
+           $queryLine = "select sum(trans.wert) summe, DATE(trans.Datum) datum from transaktionen trans WHERE date(trans.Datum) > date(DATE_SUB(CURRENT_DATE(),INTERVAL 30 DAY)) group by DATE(Datum) ORDER BY Datum";
            $resultLine = mysqli_query($GLOBALS["___mysqli_ston"], $queryLine)or die("$queryLine " .mysqli_error($GLOBALS["___mysqli_ston"]));
            while( $row = mysqli_fetch_assoc( $resultLine)){
              $arrayLine[$row["datum"]] = $row["summe"];
@@ -80,6 +81,7 @@
            $color8 = imagecolorallocate($diagrammAll, 154, 40, 184);
            $color9 = imagecolorallocate($diagrammAll, 0, 255, 0);
            $color10 = imagecolorallocate($diagrammAll, 0, 0, 255);
+           $color11 = imagecolorallocate($diagrammAll, 225, 30, 255);
 
            imagefill($diagrammAll, 0, 0, $weiss);
            imagefill($diagramm30, 0, 0, $weiss);
@@ -96,14 +98,14 @@
              $start = $winkel;
              $winkel = $start + $value*360/$gesamtAll;
 
-             $color = "color".$i;
+             $color = "color".$colorMap[$key];
              imagesetthickness ( $diagrammAll , 3 );
              for($rad = 0; $rad <= 50; $rad++) {
                imagearc($diagrammAll, $start_x, $start_y, ($radius-$rad), ($radius-$rad), $start, $winkel, $$color);  //because gap
              }
              $unterkante = $rand_oben+$punktbreite+($i-1)*($punktbreite+$abstand);
              imagefilledrectangle($diagrammAll, $rand_links, $rand_oben+($i-1)*($punktbreite+$abstand), $rand_links+$punktbreite, $unterkante, $$color);
-             imagettftext($diagrammAll, $schriftgroesse, 0, $rand_links+$punktbreite+5, $unterkante-$punktbreite/2+$schriftgroesse/2, $schwarz, "media/arial.ttf", $key." ".round($value*100/$gesamtAll, 1)." %");
+             imagettftext($diagrammAll, $schriftgroesse, 0, $rand_links+$punktbreite+5, $unterkante-$punktbreite/2+$schriftgroesse/2, $schwarz, "media/NotoSans-Regular.ttf", $key." ".round($value*100/$gesamtAll, 1)." %");
            }
 
            $i = 0;
@@ -114,14 +116,14 @@
              $start = $winkel;
              $winkel = $start + $value*360/$gesamt30;
 
-             $color = "color".$i;
+             $color = "color".$colorMap[$key];
              imagesetthickness ( $diagramm30 , 3 );
              for($rad = 0; $rad <= 50; $rad++) {
                imagearc($diagramm30, $start_x, $start_y, ($radius-$rad), ($radius-$rad), $start, $winkel, $$color);  //because gap
              }
              $unterkante = $rand_oben+$punktbreite+($i-1)*($punktbreite+$abstand);
              imagefilledrectangle($diagramm30, $rand_links, $rand_oben+($i-1)*($punktbreite+$abstand), $rand_links+$punktbreite, $unterkante, $$color);
-             imagettftext($diagramm30, $schriftgroesse, 0, $rand_links+$punktbreite+5, $unterkante-$punktbreite/2+$schriftgroesse/2, $schwarz, "media/arial.ttf", $key." ".round($value*100/$gesamt30, 1)." %");
+             imagettftext($diagramm30, $schriftgroesse, 0, $rand_links+$punktbreite+5, $unterkante-$punktbreite/2+$schriftgroesse/2, $schwarz, "media/NotoSans-Regular.ttf", $key." ".round($value*100/$gesamt30, 1)." %");
            }
 
            //maxGuthaben ermitteln, ausgehend von $rest
@@ -143,20 +145,20 @@
            imageline($diagrammLine, ($rand_links+40), 0, ($rand_links+40), ($hoehe-$rand_oben+3), $schwarz); //Y-Achse
            imageline($diagrammLine, ($rand_links+37), $posxachse, $breite, $posxachse, $schwarz); //X-Achse
            if($minGuthaben > 0) {
-             imagettftext($diagrammLine, $schriftgroesse, 0, $rand_links+5, $posxachse , $schwarz, "media/arial.ttf", round($minGuthaben,-1));
+             imagettftext($diagrammLine, $schriftgroesse, 0, $rand_links+5, $posxachse , $schwarz, "media/NotoSans-Regular.ttf", round($minGuthaben,-1));
            }
            else {
-             imagettftext($diagrammLine, $schriftgroesse, 0, $rand_links+5, $posxachse , $schwarz, "media/arial.ttf", 0);
+             imagettftext($diagrammLine, $schriftgroesse, 0, $rand_links+5, $posxachse , $schwarz, "media/NotoSans-Regular.ttf", 0);
            }
 
            //Y-Achse beschriften
-           imagettftext($diagrammLine, $schriftgroesse, 90, $rand_links, $hoehe/2+$schriftgroesse/2, $schwarz, "media/arial.ttf", "Guthaben");
+           imagettftext($diagrammLine, $schriftgroesse, 90, $rand_links, $hoehe/2+$schriftgroesse/2, $schwarz, "media/NotoSans-Regular.ttf", "Guthaben");
            $i = 0;
            $lichtgrau = imagecolorallocate($diagrammLine, 200, 200, 200);
            $stepsize = 50;
            for($wert = $minGuthaben; $wert <= $maxGuthaben; $wert+=$stepsize) {
              if($wert <-10 || $wert > 10) {
-               imagettftext($diagrammLine, $schriftgroesse, 0, $rand_links+5, ($hoehe-$rand_oben - ($ypereuro*$i*$stepsize)) , $schwarz, "media/arial.ttf", round($wert,-1));
+               imagettftext($diagrammLine, $schriftgroesse, 0, $rand_links+5, ($hoehe-$rand_oben - ($ypereuro*$i*$stepsize)) , $schwarz, "media/NotoSans-Regular.ttf", round($wert,-1));
                if($i>0) {
                  imageline($diagrammLine, ($rand_links+37), ($hoehe-$rand_oben-($ypereuro*$i*$stepsize)), $breite, ($hoehe-$rand_oben-($ypereuro*$i*$stepsize)), $lichtgrau);
                }
@@ -168,7 +170,7 @@
            for($dat=30; $dat>=0; $dat--) {
              $date = new DateTime("-".$dat." days");
              if($dat%5==0) {
-               imagettftext($diagrammLine, 8, 70, ($rand_links+40+$xperday*(30-$dat)-8), ($hoehe+10) , $schwarz, "media/arial.ttf", $date->format("d.m."));
+               imagettftext($diagrammLine, 8, 70, ($rand_links+40+$xperday*(30-$dat)-8), ($hoehe+10) , $schwarz, "media/NotoSans-Regular.ttf", $date->format("d.m."));
                imageline($diagrammLine, ($rand_links+40+$xperday*(30-$dat)), $posxachse, ($rand_links+40+$xperday*(30-$dat)), $posxachse+2, $schwarz);
              }
              if($date->format("D") == "Sat") {
