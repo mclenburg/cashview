@@ -188,7 +188,7 @@
            if($minGuthaben<0) {
              $minGuthaben=0;
            }
-           $posy_alt = $posxachse-($ypereuro*$rest)+$minGuthaben;
+           $posy_alt = $posxachse-($ypereuro*$rest)+($ypereuro*$minGuthaben);
            $dat_alt = 30;
            for($dat=29; $dat>=0; $dat--) {
                $found = false;
@@ -196,8 +196,8 @@
                  $date = new DateTime("-".$dat." days");
                  if(strtotime($key) == strtotime($date->format("Y-m-d"))) {
                      $rest -= $value;
-                     imageline($diagrammLine, ($rand_links+40)+$xperday*(30-$dat_alt), $posy_alt, ($rand_links+40)+$xperday*(30-$dat), $posxachse-($ypereuro*$rest)+$minGuthaben, $color1);
-                     $posy_alt = $posxachse-($ypereuro*$rest) + $minGuthaben;
+                     imageline($diagrammLine, ($rand_links+40)+$xperday*(30-$dat_alt), $posy_alt, ($rand_links+40)+$xperday*(30-$dat), $posxachse-($ypereuro*$rest)+($ypereuro*$minGuthaben), $color1);
+                     $posy_alt = $posxachse-($ypereuro*$rest) + ($ypereuro*$minGuthaben);
                      $dat_alt = $dat;
                      $found = true;
                  }
