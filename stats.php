@@ -170,7 +170,7 @@
            for($dat=30; $dat>=0; $dat--) {
              $date = new DateTime("-".$dat." days");
              if($dat%5==0) {
-               imagettftext($diagrammLine, 8, 70, ($rand_links+40+$xperday*(30-$dat)-8), ($hoehe+10) , $schwarz, "media/NotoSans-Regular.ttf", $date->format("d.m."));
+               imagettftext($diagrammLine, 8, 70, ($rand_links+40+$xperday*(30-$dat)-8), ($hoehe+10) , $schwarz, "media/NotoSans-Regular.ttf", str_pad($date->format("d.m."), strlen($maxGuthaben)));
                imageline($diagrammLine, ($rand_links+40+$xperday*(30-$dat)), $posxachse, ($rand_links+40+$xperday*(30-$dat)), $posxachse+2, $schwarz);
              }
              if($date->format("D") == "Sat") {
@@ -185,7 +185,10 @@
            }
 
            //Werte eintragen
-           $posy_alt = $posxachse-($ypereuro*$rest);
+           if($minGuthaben<0) {
+             $minGuthaben=0;
+           }
+           $posy_alt = $posxachse-($ypereuro*$rest)+$minGuthaben;
            $dat_alt = 30;
            for($dat=29; $dat>=0; $dat--) {
                $found = false;
@@ -193,7 +196,7 @@
                  $date = new DateTime("-".$dat." days");
                  if(strtotime($key) == strtotime($date->format("Y-m-d"))) {
                      $rest -= $value;
-                     imageline($diagrammLine, ($rand_links+40)+$xperday*(30-$dat_alt), $posy_alt, ($rand_links+40)+$xperday*(30-$dat), $posxachse-($ypereuro*$rest), $color1);
+                     imageline($diagrammLine, ($rand_links+40)+$xperday*(30-$dat_alt), $posy_alt, ($rand_links+40)+$xperday*(30-$dat), $posxachse-($ypereuro*$rest)+$minGuthaben, $color1);
                      $posy_alt = $posxachse-($ypereuro*$rest);
                      $dat_alt = $dat;
                      $found = true;
