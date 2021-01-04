@@ -191,7 +191,7 @@
                $found = false;
                foreach($arrayLine as $key => $value) {
                  $date = new DateTime("-".$dat." days");
-                 if(strtotime($key) == strtotime($date->format("yy-m-d"))) {
+                 if(strtotime($key) == strtotime($date->format("Y-m-d"))) {
                      $rest -= $value;
                      imageline($diagrammLine, ($rand_links+40)+$xperday*(30-$dat_alt), $posy_alt, ($rand_links+40)+$xperday*(30-$dat), $posxachse-($ypereuro*$rest), $color1);
                      $posy_alt = $posxachse-($ypereuro*$rest);
