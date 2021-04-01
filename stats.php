@@ -32,6 +32,9 @@
            $resultAll = mysqli_query($GLOBALS["___mysqli_ston"], $queryAll)or die("$queryAll " .mysqli_error($GLOBALS["___mysqli_ston"]));
            $result30 = mysqli_query($GLOBALS["___mysqli_ston"], $query30)or die("$query30 " .mysqli_error($GLOBALS["___mysqli_ston"]));
 
+           $querySumPerKat30 = "select sum(t.wert) wert, k.bez kategorie from transaktionen t inner join kategorien k on t.katID = k.ID where date(t.Datum) >= date(DATE_SUB(CURRENT_DATE(),INTERVAL 30 DAY)) and k.bez != 'Gehalt' group by k.bez order by k.sortorder";
+           $sumPerKat30 = mysqli_query($GLOBALS["___mysqli_ston"], $querySumPerKat30)or die("$querySumPerKat30 " .mysqli_error($GLOBALS["___mysqli_ston"]));
+
            while( $row = mysqli_fetch_assoc( $resultAll)){
                $arrayAll[$row["bez"]] = $row["summe"];
                $colorMap[$row["bez"]] = $row["ID"];
@@ -267,6 +270,30 @@
               	            </p>
               	          </div>
               	      </div>
+
+              	      <div class="card">
+                        <div class="card-header"><h5 class="d-inline-block card-title">Aufteilung Kategorien (30 Tage)</h5>
+                        </div>
+                        <div class="card-body">
+                          <p class="card-text">
+                            <table class="table">
+                              <thead>
+                                <tr>
+                                  <th scope="col">Kategorie</th>
+                                  <th scope="col">Betrag</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                            <?php
+                               while( $row = mysqli_fetch_assoc( $sumPerKat30)){
+                                  echo("<tr><td>".$row["kategorie"]."</td><td>".$row["wert"]."</td></tr>");
+                               }
+                            ?>
+                            </tbody>
+                            </table>
+                            </p>
+                          </div>
+                      </div>
     </div>
 
 </body>
