@@ -251,7 +251,7 @@
                                ob_start();
                                imagepng($diagrammAll);
                                $imagedata = ob_get_clean();
-                               echo("<img class=\"d-inline-block float-right\" src=\"data:image/png;base64,".base64_encode($imagedata)."\">");
+                               echo("<img src=\"data:image/png;base64,".base64_encode($imagedata)."\">");
                             ?>
             	            </p>
             	          </div>
