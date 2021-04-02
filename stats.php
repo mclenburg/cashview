@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <title>CashView - Die Finanz&uuml;bersicht</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.10.24/css/dataTables.bootstrap4.min.css">
     <link href="favicon.ico" rel="shortcut icon">
     <link rel="icon" href="favicon.ico" type="image/ico">
 </head>
@@ -276,11 +277,11 @@
                         </div>
                         <div class="card-body">
                           <p class="card-text">
-                            <table class="table" id="KatTable">
+                            <table class="table table-striped" id="KatTable">
                               <thead>
                                 <tr>
-                                  <th scope="col">Kategorie</th>
-                                  <th scope="col">Betrag</th>
+                                  <th>Kategorie</th>
+                                  <th>Betrag</th>
                                 </tr>
                               </thead>
                               <tbody>
@@ -295,11 +296,13 @@
                           </div>
                       </div>
     </div>
+    <script src="https://code.jquery.com/jquery-3.5.1.js">
     <script>
     $(document).ready(function () {
     $('#KatTable').DataTable();
-    $('.dataTables_length').addClass('bs-select');
     });
     </script>
+    <script src="https://cdn.datatables.net/1.10.24/js/jquery.dataTables.min.js">
+    <script src="https://cdn.datatables.net/1.10.24/js/dataTables.bootstrap4.min.js">
 </body>
 </html>
