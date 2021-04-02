@@ -296,13 +296,13 @@
                           </div>
                       </div>
     </div>
-    <script src="https://code.jquery.com/jquery-3.5.1.js">
+    <script src="https://code.jquery.com/jquery-3.5.1.js" />
+    <script src="https://cdn.datatables.net/1.10.24/js/jquery.dataTables.min.js" />
+    <script src="https://cdn.datatables.net/1.10.24/js/dataTables.bootstrap4.min.js" />
     <script>
     $(document).ready(function () {
     $('#KatTable').DataTable();
     });
     </script>
-    <script src="https://cdn.datatables.net/1.10.24/js/jquery.dataTables.min.js">
-    <script src="https://cdn.datatables.net/1.10.24/js/dataTables.bootstrap4.min.js">
 </body>
 </html>
