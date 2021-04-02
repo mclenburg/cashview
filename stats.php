@@ -295,9 +295,11 @@
                           </div>
                       </div>
     </div>
+    <script>
     $(document).ready(function () {
     $('#KatTable').DataTable();
     $('.dataTables_length').addClass('bs-select');
     });
+    </script>
 </body>
 </html>
