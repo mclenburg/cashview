@@ -48,7 +48,7 @@
 
 	    <div class="container">
 	      <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-	        <span class="navbar-brand">CashView</span><a class="btn btn-secondary float-right" href="stats.php" role="button">Statistik</a>
+	        <span class="navbar-brand">CashView</span><a class="btn btn-secondary d-inline-block float-right" href="stats.php" role="button">Statistik</a>
 	      </nav>
 
 	      <div class="card">
