@@ -303,7 +303,8 @@
     $(document).ready(function () {
       $('#KatTable').DataTable({
         "paging": false,
-        "search": false
+        "searching": false,
+        "info": false
       });
     });
     </script>
