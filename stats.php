@@ -276,7 +276,7 @@
                         </div>
                         <div class="card-body">
                           <p class="card-text">
-                            <table class="table">
+                            <table class="table" id="KatTable">
                               <thead>
                                 <tr>
                                   <th scope="col">Kategorie</th>
@@ -295,6 +295,9 @@
                           </div>
                       </div>
     </div>
-
+    $(document).ready(function () {
+    $('#KatTable').DataTable();
+    $('.dataTables_length').addClass('bs-select');
+    });
 </body>
 </html>
