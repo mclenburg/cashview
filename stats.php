@@ -309,7 +309,8 @@
       $('#KatTable').DataTable({
         "paging": false,
         "searching": false,
-        "info": false
+        "info": false,
+        "order": [[ 1, "desc" ]]
       });
     });
     </script>
