@@ -85,7 +85,12 @@
            $color8 = imagecolorallocate($diagrammAll, 154, 40, 184);
            $color9 = imagecolorallocate($diagrammAll, 0, 255, 0);
            $color10 = imagecolorallocate($diagrammAll, 0, 0, 255);
+
            $color11 = imagecolorallocate($diagrammAll, 225, 30, 255);
+           $color12 = imagecolorallocate($diagrammAll, 105, 89, 205);
+           $color13 = imagecolorallocate($diagrammAll, 227, 255, 212);
+           $color14 = imagecolorallocate($diagrammAll, 0, 134, 139);
+           $color15 = imagecolorallocate($diagrammAll, 225, 126, 36);
 
            imagefill($diagrammAll, 0, 0, $weiss);
            imagefill($diagramm30, 0, 0, $weiss);
@@ -105,8 +110,6 @@
              $color = "color".$colorMap[$key];
              imagesetthickness ( $diagrammAll , 3 );
              for($rad = 0; $rad <= 50; $rad++) {
-             echo $$color;
-             echo ".".$colorMap[$key].".-".$key."-";
                imagearc($diagrammAll, $start_x, $start_y, ($radius-$rad), ($radius-$rad), $start, $winkel, $$color);  //because gap
              }
              $unterkante = $rand_oben+$punktbreite+($i-1)*($punktbreite+$abstand);
