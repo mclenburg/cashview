@@ -56,6 +56,7 @@ CREATE TABLE `kategorien` (
   `ID` int(11) NOT NULL,
   `bez` varchar(45) COLLATE latin1_german2_ci NOT NULL,
   `sortorder` int(11) DEFAULT NULL,
+  `statscolor` VARCHAR(45) NOT NULL DEFAULT '0,0,0' AFTER `sortorder`,
   PRIMARY KEY (`ID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_german2_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
