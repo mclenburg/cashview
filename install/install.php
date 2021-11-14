@@ -10,6 +10,9 @@
     <link rel="icon" href="favicon.ico" type="image/ico">
 </head>
 <body>
-
+   <?php
+     $config = array('user'=>$_POST['user'], 'passwd'=>$_POST['passwd']);
+     file_put_contents('config.php', '<?php return ' . var_export($config, true) . ';');
+   ?>
 </body>
 </html>
