@@ -13,6 +13,8 @@
            error_reporting(E_ALL);
            ini_set('display_errors', 1);
 
+           $mandant = $_POST["manId"];
+
 	       $name = gethostbyaddr($_SERVER['REMOTE_ADDR']);
 		   ($GLOBALS["___mysqli_ston"] = mysqli_connect("192.168.5.103",  "cashview",  "cash123", "cashview"))  or die("ERROR connecting to database.");
 	               
@@ -33,7 +35,7 @@
 	         	 	 }
 	         	 	 else
 	         	 	 {
-	         	     $insert = "INSERT INTO transaktionen (Wert, Datum, KtoID, katID) VALUES ($Betrag, now(), $Konto, $Zweck)";
+	         	     $insert = "INSERT INTO transaktionen (Wert, Datum, KtoID, katID, manId) VALUES ($Betrag, now(), $Konto, $Zweck, $mandant)";
 	         	     mysqli_query($GLOBALS["___mysqli_ston"], $insert) or die("ERROR: ".mysqli_error($GLOBALS["___mysqli_ston"]));
 	         	   }
 	         	 }
@@ -69,14 +71,14 @@
                   </thead>
                   <tbody>
                       <?php
-                      		     $query = "select Betrag, KtoID, Bez, Grenze from Initialwerte, Konten where Konten.id = KtoID";
+                      		     $query = "select Betrag, KtoID, Bez, Grenze from Initialwerte, Konten where Konten.id = KtoID and Konten.manId = $mandant";
                                  $result = mysqli_query($GLOBALS["___mysqli_ston"], $query)or die("$query " .mysqli_error($GLOBALS["___mysqli_ston"]));
                                  $plus_kum = 0;
                                  $rest_kum = 0;
                                  while($init_wert = mysqli_fetch_assoc($result))
                                  {
                                  	 $stand = $init_wert["Betrag"];
-                                 	 $query = "select Wert from transaktionen where KtoID = " .$init_wert["KtoID"];
+                                 	 $query = "select Wert from transaktionen where KtoID = " .$init_wert["KtoID"] . " and manId = $mandant";
                                  	 $result_inner = mysqli_query($GLOBALS["___mysqli_ston"], $query) OR die("Error: $query " .mysqli_error($GLOBALS["___mysqli_ston"]));
                                  	 $stand = $init_wert["Betrag"];
                                  	 while($trans_row = mysqli_fetch_assoc($result_inner))
@@ -121,6 +123,7 @@
             <div class="card-body">
               <p class="card-text">
                 <form method="POST" action="index.php">
+                  <?php echo("<input type=\"hidden\" value=\"" .$mandant. "\" name=\"manId\" />");"
                   <div class="input-group input-group-sm mb-3">
                     <div class="input-group-prepend">
                       <span class="input-group-text" id="betrag">Betrag</span>
@@ -153,7 +156,7 @@
                     </div>
                     <select name="konto" size=1  aria-label="Konto" aria-describedby="konto">
                      <?php
-                       $query = "select ID, Bez from Konten";
+                       $query = "select ID, Bez from Konten where manId = $mandant";
                        $result = mysqli_query($GLOBALS["___mysqli_ston"], $query) or die("ERROR: " .mysqli_error($GLOBALS["___mysqli_ston"]));
                        while($kat_row = mysqli_fetch_assoc($result))
                        {

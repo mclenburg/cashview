@@ -41,6 +41,7 @@ CREATE TABLE `Konten` (
   `id` int(11) NOT NULL,
   `Bez` varchar(50) COLLATE latin1_german2_ci NOT NULL,
   `Grenze` varchar(45) COLLATE latin1_german2_ci NOT NULL DEFAULT '0',
+  `manId` int(11) NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_german2_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -75,6 +76,7 @@ CREATE TABLE `laufendes` (
   `modulo` int(11) DEFAULT NULL,
   `Beschreibung` varchar(45) COLLATE latin1_german2_ci DEFAULT NULL,
   `id` int(11) NOT NULL,
+  `manId` int(11) NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_german2_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -90,7 +92,8 @@ CREATE TABLE `transaktionen` (
   `wert` int(11) NOT NULL,
   `KtoID` int(11) NOT NULL,
   `katID` int(11) DEFAULT NULL,
-  `Datum` datetime DEFAULT NULL
+  `Datum` datetime DEFAULT NULL,
+  `manId`   int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_german2_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
