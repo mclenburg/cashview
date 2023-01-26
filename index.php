@@ -80,7 +80,7 @@
                   </thead>
                   <tbody>
                       <?php
-                      		     $query = "select Betrag, KtoID, Bez, Grenze from Initialwerte, Konten where Konten.id = KtoID and Konten.manId = $mandant";
+                      		     $query = "select Betrag, KtoID, Bez, Grenze from Initialwerte inner join Konten on Konten.id = KtoID where Konten.manId = $mandant";
                                  $result = mysqli_query($GLOBALS["___mysqli_ston"], $query)or die("$query " .mysqli_error($GLOBALS["___mysqli_ston"]));
                                  $plus_kum = 0;
                                  $rest_kum = 0;
