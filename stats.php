@@ -12,7 +12,7 @@
 <body>
   <?php
            $mandant = -1;
-           if(isset($_POST["manId"])
+           if(isset($_POST["manId"]))
            {
              $mandant = $_POST["manId"];
            }
