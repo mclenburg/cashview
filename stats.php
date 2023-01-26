@@ -11,8 +11,16 @@
 </head>
 <body>
   <?php
-             error_reporting(E_ALL);
-             ini_set('display_errors', 1);
+           $mandant = -1;
+           if(isset($_POST["manId"])
+           {
+             $mandant = $_POST["manId"];
+           }
+           else {
+             $mandant = $_GET["manId"];
+           }
+           error_reporting(E_ALL);
+           ini_set('display_errors', 1);
 
            $anzahl_tage = date("t");
            $heute = date("d");
@@ -21,19 +29,19 @@
   	       $name = gethostbyaddr($_SERVER['REMOTE_ADDR']);
   		   ($GLOBALS["___mysqli_ston"] = mysqli_connect("192.168.5.103",  "cashview",  "cash123", "cashview"))  or die("ERROR connecting to database.");
 
-  		   $resultRest = mysqli_query($GLOBALS["___mysqli_ston"], "select sum(wert) wert from transaktionen where date(Datum) <= date(DATE_SUB(CURRENT_DATE(),INTERVAL 30 DAY))")or die("queryRest " .mysqli_error($GLOBALS["___mysqli_ston"]));
+  		   $resultRest = mysqli_query($GLOBALS["___mysqli_ston"], "select sum(wert) wert from transaktionen where date(Datum) <= date(DATE_SUB(CURRENT_DATE(),INTERVAL 30 DAY)) and manId = $mandant")or die("queryRest " .mysqli_error($GLOBALS["___mysqli_ston"]));
   		   $rest = mysqli_fetch_assoc($resultRest)["wert"];
-  		   $resultInit = mysqli_query($GLOBALS["___mysqli_ston"], "select sum(Betrag) wert from Initialwerte")or die("queryIni " .mysqli_error($GLOBALS["___mysqli_ston"]));
+  		   $resultInit = mysqli_query($GLOBALS["___mysqli_ston"], "select sum(Betrag) wert from Initialwerte inner join Konten on Initialwerte.KtoId = Konten.id where Konten.manId = $mandant")or die("queryIni " .mysqli_error($GLOBALS["___mysqli_ston"]));
            $init = mysqli_fetch_assoc($resultInit)["wert"];
            $rest = $init - $rest;
 
-  		   $queryAll = "select sum(trans.wert) summe, kat.bez, kat.ID from transaktionen trans left outer join kategorien kat on trans.katID = kat.ID where wert > 0 group by katID order by sortorder";
-  		   $query30 = "select sum(trans.wert) summe, kat.bez from transaktionen trans left outer join kategorien kat on trans.katID = kat.ID where wert > 0 and trans.Datum > DATE_SUB(CURRENT_DATE(),INTERVAL 30 DAY) group by katID order by sortorder";
+  		   $queryAll = "select sum(trans.wert) summe, kat.bez, kat.ID from transaktionen trans left outer join kategorien kat on trans.katID = kat.ID where wert > 0 and manId = $mandant group by katID order by sortorder";
+  		   $query30 = "select sum(trans.wert) summe, kat.bez from transaktionen trans left outer join kategorien kat on trans.katID = kat.ID where wert > 0 and manId = $mandant and trans.Datum > DATE_SUB(CURRENT_DATE(),INTERVAL 30 DAY) group by katID order by sortorder";
 
            $resultAll = mysqli_query($GLOBALS["___mysqli_ston"], $queryAll)or die("$queryAll " .mysqli_error($GLOBALS["___mysqli_ston"]));
            $result30 = mysqli_query($GLOBALS["___mysqli_ston"], $query30)or die("$query30 " .mysqli_error($GLOBALS["___mysqli_ston"]));
 
-           $querySumPerKat30 = "select sum(t.wert) wert, k.bez kategorie from transaktionen t inner join kategorien k on t.katID = k.ID where date(t.Datum) >= date(DATE_SUB(CURRENT_DATE(),INTERVAL 30 DAY)) and k.bez != 'Gehalt' group by k.bez order by k.sortorder";
+           $querySumPerKat30 = "select sum(t.wert) wert, k.bez kategorie from transaktionen t inner join kategorien k on t.katID = k.ID where date(t.Datum) >= date(DATE_SUB(CURRENT_DATE(),INTERVAL 30 DAY)) and k.bez != 'Gehalt' and manId = $mandant group by k.bez order by k.sortorder";
            $sumPerKat30 = mysqli_query($GLOBALS["___mysqli_ston"], $querySumPerKat30)or die("$querySumPerKat30 " .mysqli_error($GLOBALS["___mysqli_ston"]));
 
            while( $row = mysqli_fetch_assoc( $resultAll)){
@@ -44,7 +52,7 @@
                $array30[$row["bez"]] = $row["summe"];
            }
 
-           $queryLine = "select sum(trans.wert) summe, DATE(trans.Datum) datum from transaktionen trans WHERE date(trans.Datum) > date(DATE_SUB(CURRENT_DATE(),INTERVAL 30 DAY)) group by DATE(Datum) ORDER BY Datum";
+           $queryLine = "select sum(trans.wert) summe, DATE(trans.Datum) datum from transaktionen trans WHERE date(trans.Datum) > date(DATE_SUB(CURRENT_DATE(),INTERVAL 30 DAY)) and manId = $mandant group by DATE(Datum) ORDER BY Datum";
            $resultLine = mysqli_query($GLOBALS["___mysqli_ston"], $queryLine)or die("$queryLine " .mysqli_error($GLOBALS["___mysqli_ston"]));
            while( $row = mysqli_fetch_assoc( $resultLine)){
              $arrayLine[$row["datum"]] = $row["summe"];

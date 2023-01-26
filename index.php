@@ -57,7 +57,8 @@
 
 	    <div class="container">
 	      <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-	        <span class="navbar-brand">CashView</span><a class="btn btn-secondary d-inline-block float-right" href="stats.php?manId=" role="button">Statistik</a>
+	        <?php echo("<span class=\"navbar-brand\">CashView</span><a class=\"btn btn-secondary d-inline-block float-right\" href=\"stats.php?manId=$mandant\" role=\"button\">Statistik</a>");
+	        ?>
 	      </nav>
 
 	      <div class="card">
