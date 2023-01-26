@@ -21,6 +21,7 @@
            else {
              $mandant = $_GET["manId"];
            }
+           if($mandant == -1) { echo("Fehlende Mandanten-ID."); return; }
 
 	       $name = gethostbyaddr($_SERVER['REMOTE_ADDR']);
 		   ($GLOBALS["___mysqli_ston"] = mysqli_connect("192.168.5.103",  "cashview",  "cash123", "cashview"))  or die("ERROR connecting to database.");
