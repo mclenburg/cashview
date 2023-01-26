@@ -132,7 +132,7 @@
             <div class="card-body">
               <p class="card-text">
                 <form method="POST" action="index.php">
-                  <?php echo("<input type=\"hidden\" value=\"" .$mandant. "\" name=\"manId\" />");"
+                  <?php echo("<input type=\"hidden\" value=\"" .$mandant. "\" name=\"manId\" />"); ?>
                   <div class="input-group input-group-sm mb-3">
                     <div class="input-group-prepend">
                       <span class="input-group-text" id="betrag">Betrag</span>
