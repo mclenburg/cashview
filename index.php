@@ -13,7 +13,14 @@
            error_reporting(E_ALL);
            ini_set('display_errors', 1);
 
-           $mandant = $_POST["manId"];
+           $mandant = -1;
+           if(isset($_POST["manId"])
+           {
+             $mandant = $_POST["manId"];
+           }
+           else {
+             $mandant = $_GET["manId"];
+           }
 
 	       $name = gethostbyaddr($_SERVER['REMOTE_ADDR']);
 		   ($GLOBALS["___mysqli_ston"] = mysqli_connect("192.168.5.103",  "cashview",  "cash123", "cashview"))  or die("ERROR connecting to database.");
@@ -30,7 +37,7 @@
 	         	 	 if($kommas > 1)
 	         	 	 {
 	    ?>
-	         	 	  <span style="font-size:30px;color:#ff0000;">Kein g�ltiger Betrag!</span>
+	         	 	  <span style="font-size:30px;color:#ff0000;">Kein gültiger Betrag!</span>
 	    <?php
 	         	 	 }
 	         	 	 else
@@ -50,7 +57,7 @@
 
 	    <div class="container">
 	      <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-	        <span class="navbar-brand">CashView</span><a class="btn btn-secondary d-inline-block float-right" href="stats.php" role="button">Statistik</a>
+	        <span class="navbar-brand">CashView</span><a class="btn btn-secondary d-inline-block float-right" href="stats.php?manId=" role="button">Statistik</a>
 	      </nav>
 
 	      <div class="card">
