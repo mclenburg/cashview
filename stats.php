@@ -56,16 +56,16 @@
            $abstand = 10;
            $schriftgroesse = 10;
 
+           $diagrammAll = imagecreatetruecolor($breite, $hoehe);
+           $diagramm30 = imagecreatetruecolor($breite, $hoehe);
+           $diagrammLine = imagecreatetruecolor($breite, $hoehe+30);
+
            $schwarz = imagecolorallocate($diagrammAll, 0, 0, 0);
            $weiss = imagecolorallocate($diagrammAll, 255, 255, 255);
            $schwarz30 = imagecolorallocate($diagramm30, 0, 0, 0);
            $weiss30 = imagecolorallocate($diagramm30, 255, 255, 255);
            $yellow = imagecolorallocate($diagrammLine, 255, 250, 140);
            $lightyellow = imagecolorallocate($diagrammLine, 255, 246, 143);
-
-           $diagrammAll = imagecreatetruecolor($breite, $hoehe);
-           $diagramm30 = imagecreatetruecolor($breite, $hoehe);
-           $diagrammLine = imagecreatetruecolor($breite, $hoehe+30);
 
            while( $row = mysqli_fetch_assoc( $resultAll)){
                $arrayAll[$row["bez"]] = $row["summe"];
