@@ -196,7 +196,7 @@
                  $date = new DateTime("-".$dat." days");
                  if(strtotime($key) == strtotime($date->format("Y-m-d"))) {
                      $rest -= $value;
-                     imageline($diagrammLine, ($rand_links+40)+$xperday*(30-$dat_alt), $posy_alt, ($rand_links+40)+$xperday*(30-$dat), $posxachse-($ypereuro*$rest)+($ypereuro*$minGuthaben), $colorMap[$key]);
+                     imageline($diagrammLine, ($rand_links+40)+$xperday*(30-$dat_alt), $posy_alt, ($rand_links+40)+$xperday*(30-$dat), $posxachse-($ypereuro*$rest)+($ypereuro*$minGuthaben), $schwarz);
                      $posy_alt = $posxachse-($ypereuro*$rest) + ($ypereuro*$minGuthaben);
                      $dat_alt = $dat;
                      $found = true;
