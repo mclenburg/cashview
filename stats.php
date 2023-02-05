@@ -35,7 +35,7 @@
            $init = mysqli_fetch_assoc($resultInit)["wert"];
            $rest = $init - $rest;
 
-  		   $queryAll = "select sum(trans.wert) summe, kat.bez, kat.ID from transaktionen trans left outer join kategorien kat on trans.katID = kat.ID where wert > 0 and manId = $mandant group by katID order by sortorder";
+  		   $queryAll = "select sum(trans.wert) summe, kat.bez, kat.ID, kat.statscolor from transaktionen trans left outer join kategorien kat on trans.katID = kat.ID where wert > 0 and manId = $mandant group by katID order by sortorder";
   		   $query30 = "select sum(trans.wert) summe, kat.bez from transaktionen trans left outer join kategorien kat on trans.katID = kat.ID where wert > 0 and manId = $mandant and trans.Datum > DATE_SUB(CURRENT_DATE(),INTERVAL 30 DAY) group by katID order by sortorder";
 
            $resultAll = mysqli_query($GLOBALS["___mysqli_ston"], $queryAll)or die("$queryAll " .mysqli_error($GLOBALS["___mysqli_ston"]));
@@ -43,21 +43,6 @@
 
            $querySumPerKat30 = "select sum(t.wert) wert, k.bez kategorie from transaktionen t inner join kategorien k on t.katID = k.ID where date(t.Datum) >= date(DATE_SUB(CURRENT_DATE(),INTERVAL 30 DAY)) and k.bez != 'Gehalt' and manId = $mandant group by k.bez order by k.sortorder";
            $sumPerKat30 = mysqli_query($GLOBALS["___mysqli_ston"], $querySumPerKat30)or die("$querySumPerKat30 " .mysqli_error($GLOBALS["___mysqli_ston"]));
-
-           while( $row = mysqli_fetch_assoc( $resultAll)){
-               $arrayAll[$row["bez"]] = $row["summe"];
-               $colorMap[$row["bez"]] = $row["ID"];
-           }
-           while( $row = mysqli_fetch_assoc( $result30)){
-               $array30[$row["bez"]] = $row["summe"];
-           }
-
-           $queryLine = "select sum(trans.wert) summe, DATE(trans.Datum) datum from transaktionen trans WHERE date(trans.Datum) > date(DATE_SUB(CURRENT_DATE(),INTERVAL 30 DAY)) and manId = $mandant group by DATE(Datum) ORDER BY Datum";
-           $resultLine = mysqli_query($GLOBALS["___mysqli_ston"], $queryLine)or die("$queryLine " .mysqli_error($GLOBALS["___mysqli_ston"]));
-           while( $row = mysqli_fetch_assoc( $resultLine)){
-             $arrayLine[$row["datum"]] = $row["summe"];
-           }
-           $jetzt = $datum = date("d.m.Y");
 
            $breite = 350;
            $hoehe = 250;
@@ -71,10 +56,6 @@
            $abstand = 10;
            $schriftgroesse = 10;
 
-           $diagrammAll = imagecreatetruecolor($breite, $hoehe);
-           $diagramm30 = imagecreatetruecolor($breite, $hoehe);
-           $diagrammLine = imagecreatetruecolor($breite, $hoehe+30);
-
            $schwarz = imagecolorallocate($diagrammAll, 0, 0, 0);
            $weiss = imagecolorallocate($diagrammAll, 255, 255, 255);
            $schwarz30 = imagecolorallocate($diagramm30, 0, 0, 0);
@@ -82,23 +63,25 @@
            $yellow = imagecolorallocate($diagrammLine, 255, 250, 140);
            $lightyellow = imagecolorallocate($diagrammLine, 255, 246, 143);
 
-           $color1 = imagecolorallocate($diagrammAll, 2, 117, 216);
-           $color2 = imagecolorallocate($diagrammAll, 92, 184, 92);
-           $color3 = imagecolorallocate($diagrammAll, 91, 192, 222);
-           $color4 = imagecolorallocate($diagrammAll, 240, 173, 78);
-           $color5 = imagecolorallocate($diagrammAll, 217, 83, 79);
+           $diagrammAll = imagecreatetruecolor($breite, $hoehe);
+           $diagramm30 = imagecreatetruecolor($breite, $hoehe);
+           $diagrammLine = imagecreatetruecolor($breite, $hoehe+30);
 
-           $color6 = imagecolorallocate($diagrammAll, 253, 138, 39);
-           $color7 = imagecolorallocate($diagrammAll, 142, 184, 40);
-           $color8 = imagecolorallocate($diagrammAll, 154, 40, 184);
-           $color9 = imagecolorallocate($diagrammAll, 0, 255, 0);
-           $color10 = imagecolorallocate($diagrammAll, 0, 0, 255);
+           while( $row = mysqli_fetch_assoc( $resultAll)){
+               $arrayAll[$row["bez"]] = $row["summe"];
+               $color=explode(",", $row["statscolor"]);
+               $colorMap[$row["bez"]] = imagecolorallocate($diagrammAll, $color[0], $color[1], $color[2]);
+           }
+           while( $row = mysqli_fetch_assoc( $result30)){
+               $array30[$row["bez"]] = $row["summe"];
+           }
 
-           $color11 = imagecolorallocate($diagrammAll, 225, 30, 255);
-           $color12 = imagecolorallocate($diagrammAll, 105, 89, 205);
-           $color13 = imagecolorallocate($diagrammAll, 227, 255, 212);
-           $color14 = imagecolorallocate($diagrammAll, 0, 134, 139);
-           $color15 = imagecolorallocate($diagrammAll, 225, 126, 36);
+           $queryLine = "select sum(trans.wert) summe, DATE(trans.Datum) datum from transaktionen trans WHERE date(trans.Datum) > date(DATE_SUB(CURRENT_DATE(),INTERVAL 30 DAY)) and manId = $mandant group by DATE(Datum) ORDER BY Datum";
+           $resultLine = mysqli_query($GLOBALS["___mysqli_ston"], $queryLine)or die("$queryLine " .mysqli_error($GLOBALS["___mysqli_ston"]));
+           while( $row = mysqli_fetch_assoc( $resultLine)){
+             $arrayLine[$row["datum"]] = $row["summe"];
+           }
+           $jetzt = $datum = date("d.m.Y");
 
            imagefill($diagrammAll, 0, 0, $weiss);
            imagefill($diagramm30, 0, 0, $weiss);
@@ -115,7 +98,7 @@
              $start = $winkel;
              $winkel = $start + $value*360/$gesamtAll;
 
-             $color = "color".$colorMap[$key];
+             $color = $colorMap[$key];
              imagesetthickness ( $diagrammAll , 3 );
              for($rad = 0; $rad <= 50; $rad++) {
                imagearc($diagrammAll, $start_x, $start_y, ($radius-$rad), ($radius-$rad), $start, $winkel, $$color);  //because gap
@@ -133,7 +116,7 @@
              $start = $winkel;
              $winkel = $start + $value*360/$gesamt30;
 
-             $color = "color".$colorMap[$key];
+             $color = $colorMap[$key];
              imagesetthickness ( $diagramm30 , 3 );
              for($rad = 0; $rad <= 50; $rad++) {
                imagearc($diagramm30, $start_x, $start_y, ($radius-$rad), ($radius-$rad), $start, $winkel, $$color);  //because gap
