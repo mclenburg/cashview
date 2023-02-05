@@ -35,7 +35,7 @@
            $init = mysqli_fetch_assoc($resultInit)["wert"];
            $rest = $init - $rest;
 
-  		   $queryAll = "select sum(trans.wert) summe, kat.bez, kat.ID from transaktionen trans left outer join kategorien kat on trans.katID = kat.ID where wert > 0 and manId = $mandant group by katID order by sortorder";
+  		   $queryAll = "select sum(trans.wert) summe, kat.bez, kat.ID, kat.statscolor from transaktionen trans left outer join kategorien kat on trans.katID = kat.ID where wert > 0 and manId = $mandant group by katID order by sortorder";
   		   $query30 = "select sum(trans.wert) summe, kat.bez from transaktionen trans left outer join kategorien kat on trans.katID = kat.ID where wert > 0 and manId = $mandant and trans.Datum > DATE_SUB(CURRENT_DATE(),INTERVAL 30 DAY) group by katID order by sortorder";
 
            $resultAll = mysqli_query($GLOBALS["___mysqli_ston"], $queryAll)or die("$queryAll " .mysqli_error($GLOBALS["___mysqli_ston"]));
@@ -43,21 +43,6 @@
 
            $querySumPerKat30 = "select sum(t.wert) wert, k.bez kategorie from transaktionen t inner join kategorien k on t.katID = k.ID where date(t.Datum) >= date(DATE_SUB(CURRENT_DATE(),INTERVAL 30 DAY)) and k.bez != 'Gehalt' and manId = $mandant group by k.bez order by k.sortorder";
            $sumPerKat30 = mysqli_query($GLOBALS["___mysqli_ston"], $querySumPerKat30)or die("$querySumPerKat30 " .mysqli_error($GLOBALS["___mysqli_ston"]));
-
-           while( $row = mysqli_fetch_assoc( $resultAll)){
-               $arrayAll[$row["bez"]] = $row["summe"];
-               $colorMap[$row["bez"]] = $row["ID"];
-           }
-           while( $row = mysqli_fetch_assoc( $result30)){
-               $array30[$row["bez"]] = $row["summe"];
-           }
-
-           $queryLine = "select sum(trans.wert) summe, DATE(trans.Datum) datum from transaktionen trans WHERE date(trans.Datum) > date(DATE_SUB(CURRENT_DATE(),INTERVAL 30 DAY)) and manId = $mandant group by DATE(Datum) ORDER BY Datum";
-           $resultLine = mysqli_query($GLOBALS["___mysqli_ston"], $queryLine)or die("$queryLine " .mysqli_error($GLOBALS["___mysqli_ston"]));
-           while( $row = mysqli_fetch_assoc( $resultLine)){
-             $arrayLine[$row["datum"]] = $row["summe"];
-           }
-           $jetzt = $datum = date("d.m.Y");
 
            $breite = 350;
            $hoehe = 250;
@@ -82,23 +67,21 @@
            $yellow = imagecolorallocate($diagrammLine, 255, 250, 140);
            $lightyellow = imagecolorallocate($diagrammLine, 255, 246, 143);
 
-           $color1 = imagecolorallocate($diagrammAll, 2, 117, 216);
-           $color2 = imagecolorallocate($diagrammAll, 92, 184, 92);
-           $color3 = imagecolorallocate($diagrammAll, 91, 192, 222);
-           $color4 = imagecolorallocate($diagrammAll, 240, 173, 78);
-           $color5 = imagecolorallocate($diagrammAll, 217, 83, 79);
+           while( $row = mysqli_fetch_assoc( $resultAll)){
+               $arrayAll[$row["bez"]] = $row["summe"];
+               $color=explode(",", $row["statscolor"]);
+               $colorMap[$row["bez"]] = imagecolorallocate($diagrammAll, $color[0], $color[1], $color[2]);
+           }
+           while( $row = mysqli_fetch_assoc( $result30)){
+               $array30[$row["bez"]] = $row["summe"];
+           }
 
-           $color6 = imagecolorallocate($diagrammAll, 253, 138, 39);
-           $color7 = imagecolorallocate($diagrammAll, 142, 184, 40);
-           $color8 = imagecolorallocate($diagrammAll, 154, 40, 184);
-           $color9 = imagecolorallocate($diagrammAll, 0, 255, 0);
-           $color10 = imagecolorallocate($diagrammAll, 0, 0, 255);
-
-           $color11 = imagecolorallocate($diagrammAll, 225, 30, 255);
-           $color12 = imagecolorallocate($diagrammAll, 105, 89, 205);
-           $color13 = imagecolorallocate($diagrammAll, 227, 255, 212);
-           $color14 = imagecolorallocate($diagrammAll, 0, 134, 139);
-           $color15 = imagecolorallocate($diagrammAll, 225, 126, 36);
+           $queryLine = "select sum(trans.wert) summe, DATE(trans.Datum) datum from transaktionen trans WHERE date(trans.Datum) > date(DATE_SUB(CURRENT_DATE(),INTERVAL 30 DAY)) and manId = $mandant group by DATE(Datum) ORDER BY Datum";
+           $resultLine = mysqli_query($GLOBALS["___mysqli_ston"], $queryLine)or die("$queryLine " .mysqli_error($GLOBALS["___mysqli_ston"]));
+           while( $row = mysqli_fetch_assoc( $resultLine)){
+             $arrayLine[$row["datum"]] = $row["summe"];
+           }
+           $jetzt = $datum = date("d.m.Y");
 
            imagefill($diagrammAll, 0, 0, $weiss);
            imagefill($diagramm30, 0, 0, $weiss);
@@ -115,13 +98,13 @@
              $start = $winkel;
              $winkel = $start + $value*360/$gesamtAll;
 
-             $color = "color".$colorMap[$key];
+             $color = $colorMap[$key];
              imagesetthickness ( $diagrammAll , 3 );
              for($rad = 0; $rad <= 50; $rad++) {
-               imagearc($diagrammAll, $start_x, $start_y, ($radius-$rad), ($radius-$rad), $start, $winkel, $$color);  //because gap
+               imagearc($diagrammAll, $start_x, $start_y, ($radius-$rad), ($radius-$rad), $start, $winkel, $color);  //because gap
              }
              $unterkante = $rand_oben+$punktbreite+($i-1)*($punktbreite+$abstand);
-             imagefilledrectangle($diagrammAll, $rand_links, $rand_oben+($i-1)*($punktbreite+$abstand), $rand_links+$punktbreite, $unterkante, $$color);
+             imagefilledrectangle($diagrammAll, $rand_links, $rand_oben+($i-1)*($punktbreite+$abstand), $rand_links+$punktbreite, $unterkante, $color);
              imagettftext($diagrammAll, $schriftgroesse, 0, $rand_links+$punktbreite+5, $unterkante-$punktbreite/2+$schriftgroesse/2, $schwarz, "media/NotoSans-Regular.ttf", $key." ".round($value*100/$gesamtAll, 1)." %");
            }
 
@@ -133,13 +116,13 @@
              $start = $winkel;
              $winkel = $start + $value*360/$gesamt30;
 
-             $color = "color".$colorMap[$key];
+             $color = $colorMap[$key];
              imagesetthickness ( $diagramm30 , 3 );
              for($rad = 0; $rad <= 50; $rad++) {
-               imagearc($diagramm30, $start_x, $start_y, ($radius-$rad), ($radius-$rad), $start, $winkel, $$color);  //because gap
+               imagearc($diagramm30, $start_x, $start_y, ($radius-$rad), ($radius-$rad), $start, $winkel, $color);  //because gap
              }
              $unterkante = $rand_oben+$punktbreite+($i-1)*($punktbreite+$abstand);
-             imagefilledrectangle($diagramm30, $rand_links, $rand_oben+($i-1)*($punktbreite+$abstand), $rand_links+$punktbreite, $unterkante, $$color);
+             imagefilledrectangle($diagramm30, $rand_links, $rand_oben+($i-1)*($punktbreite+$abstand), $rand_links+$punktbreite, $unterkante, $color);
              imagettftext($diagramm30, $schriftgroesse, 0, $rand_links+$punktbreite+5, $unterkante-$punktbreite/2+$schriftgroesse/2, $schwarz, "media/NotoSans-Regular.ttf", $key." ".round($value*100/$gesamt30, 1)." %");
            }
 
@@ -213,14 +196,14 @@
                  $date = new DateTime("-".$dat." days");
                  if(strtotime($key) == strtotime($date->format("Y-m-d"))) {
                      $rest -= $value;
-                     imageline($diagrammLine, ($rand_links+40)+$xperday*(30-$dat_alt), $posy_alt, ($rand_links+40)+$xperday*(30-$dat), $posxachse-($ypereuro*$rest)+($ypereuro*$minGuthaben), $color1);
+                     imageline($diagrammLine, ($rand_links+40)+$xperday*(30-$dat_alt), $posy_alt, ($rand_links+40)+$xperday*(30-$dat), $posxachse-($ypereuro*$rest)+($ypereuro*$minGuthaben), $schwarz);
                      $posy_alt = $posxachse-($ypereuro*$rest) + ($ypereuro*$minGuthaben);
                      $dat_alt = $dat;
                      $found = true;
                  }
                }
                if(!$found) {
-                 imageline($diagrammLine, ($rand_links+40)+$xperday*(30-$dat_alt), $posy_alt, ($rand_links+40)+$xperday*(30-$dat), $posy_alt, $color1);
+                 imageline($diagrammLine, ($rand_links+40)+$xperday*(30-$dat_alt), $posy_alt, ($rand_links+40)+$xperday*(30-$dat), $posy_alt, $schwarz);
                  $dat_alt = $dat;
                }
            }
