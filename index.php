@@ -140,8 +140,14 @@
                     <?php
                       $restTage = date("t")-date("d")+1;
                       $proTag = number_format(round($plus_kum/$restTage, 2), 2, ",", "");
+                      $proTagDispo = number_format(round($rest_kum/$restTage, 2), 2, ",", "");
 
-                      echo("<input name=\"betrag\" type=\"text\" class=\"form-control\" placeholder=\"".$proTag."\" aria-label=\"Betrag\" aria-describedby=\"betrag\" onKeyUp=\"if((event.keyCode < 48 of event.keyCode > 57) and event.keyCode != 188 and event.keyCode != 190) this.value = this.value.substr(0, this.value.length-2);\">");
+                      if($proTagDispo != $proTag) {
+                        echo("<input name=\"betrag\" type=\"text\" class=\"form-control\" placeholder=\"".$proTag." (".$proTagDispo.")\" aria-label=\"Betrag\" aria-describedby=\"betrag\" onKeyUp=\"if((event.keyCode < 48 of event.keyCode > 57) and event.keyCode != 188 and event.keyCode != 190) this.value = this.value.substr(0, this.value.length-2);\">");
+                      }
+                      else {
+                        echo("<input name=\"betrag\" type=\"text\" class=\"form-control\" placeholder=\"".$proTag."\" aria-label=\"Betrag\" aria-describedby=\"betrag\" onKeyUp=\"if((event.keyCode < 48 of event.keyCode > 57) and event.keyCode != 188 and event.keyCode != 190) this.value = this.value.substr(0, this.value.length-2);\">");
+                      }
                   ?>
                   </div>
                   <div class="input-group input-group-sm mb-3">
