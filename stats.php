@@ -143,12 +143,12 @@
 
            //Liniendiagramm bauen
            imageline($diagrammLine, ($rand_links+40), 0, ($rand_links+40), ($hoehe-$rand_oben+3), $schwarz); //Y-Achse
-           imageline($diagrammLine, ($rand_links+37), $posxachse, $breite, $posxachse, $schwarz); //X-Achse
+           imageline($diagrammLine, round($rand_links+37), round($posxachse), $breite, round($posxachse), $schwarz); //X-Achse
            if($minGuthaben > 0) {
-             imagettftext($diagrammLine, $schriftgroesse, 0, $rand_links+5, $posxachse , $schwarz, "media/NotoSans-Regular.ttf", round($minGuthaben,-1));
+             imagettftext($diagrammLine, $schriftgroesse, 0, $rand_links+5, round($posxachse) , $schwarz, "media/NotoSans-Regular.ttf", round($minGuthaben,-1));
            }
            else {
-             imagettftext($diagrammLine, $schriftgroesse, 0, $rand_links+5, $posxachse , $schwarz, "media/NotoSans-Regular.ttf", 0);
+             imagettftext($diagrammLine, $schriftgroesse, 0, $rand_links+5, round($posxachse) , $schwarz, "media/NotoSans-Regular.ttf", 0);
            }
 
            //Y-Achse beschriften
@@ -158,9 +158,9 @@
            $stepsize = 50;
            for($wert = $minGuthaben; $wert <= $maxGuthaben; $wert+=$stepsize) {
              if($wert <-10 || $wert > 10) {
-               imagettftext($diagrammLine, $schriftgroesse, 0, $rand_links+5, ($hoehe-$rand_oben - ($ypereuro*$i*$stepsize)) , $schwarz, "media/NotoSans-Regular.ttf", round($wert,-1));
+               imagettftext($diagrammLine, $schriftgroesse, 0, $rand_links+5, round($hoehe-$rand_oben - ($ypereuro*$i*$stepsize)) , $schwarz, "media/NotoSans-Regular.ttf", round($wert,-1));
                if($i>0) {
-                 imageline($diagrammLine, ($rand_links+37), ($hoehe-$rand_oben-($ypereuro*$i*$stepsize)), $breite, ($hoehe-$rand_oben-($ypereuro*$i*$stepsize)), $lichtgrau);
+                 imageline($diagrammLine, round($rand_links+37), round($hoehe-$rand_oben-($ypereuro*$i*$stepsize)), $breite, round($hoehe-$rand_oben-($ypereuro*$i*$stepsize)), $lichtgrau);
                }
              }
              $i++;
@@ -171,11 +171,11 @@
              $date = new DateTime("-".$dat." days");
              if($dat%5==0) {
                imagettftext($diagrammLine, 8, 70, ($rand_links+40+$xperday*(30-$dat)-8), ($hoehe+10) , $schwarz, "media/NotoSans-Regular.ttf", str_pad($date->format("d.m."), strlen($maxGuthaben), " ", STR_PAD_LEFT));
-               imageline($diagrammLine, ($rand_links+40+$xperday*(30-$dat)), $posxachse, ($rand_links+40+$xperday*(30-$dat)), $posxachse+2, $schwarz);
+               imageline($diagrammLine, ($rand_links+40+$xperday*(30-$dat)), $posxachse, round($rand_links+40+$xperday*(30-$dat)), $posxachse+2, $schwarz);
              }
              if($date->format("D") == "Sat") {
                imagesetthickness ( $diagrammLine , $xperday );
-               imageline($diagrammLine, ($rand_links+40+$xperday*(30-$dat)), $posxachse-1, ($rand_links+40+$xperday*(30-$dat)), 0, $lightyellow);
+               imageline($diagrammLine, ($rand_links+40+$xperday*(30-$dat)), $posxachse-1, round($rand_links+40+$xperday*(30-$dat)), 0, $lightyellow);
              }
              if($date->format("D") == "Sun") {
                imagesetthickness ( $diagrammLine , $xperday );
