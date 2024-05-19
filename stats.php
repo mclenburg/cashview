@@ -95,8 +95,8 @@
            foreach($arrayAll as $key => $value)
            {
              $i++;
-             $start = $winkel;
-             $winkel = $start + $value*360/$gesamtAll;
+             $start = round($winkel);
+             $winkel = $start + round($value*360/$gesamtAll);
 
              $color = $colorMap[$key];
              imagesetthickness ( $diagrammAll , 3 );
@@ -114,7 +114,7 @@
            {
              $i++;
              $start = $winkel;
-             $winkel = $start + $value*360/$gesamt30;
+             $winkel = $start + round($value*360/$gesamt30);
 
              $color = $colorMap[$key];
              imagesetthickness ( $diagramm30 , 3 );
