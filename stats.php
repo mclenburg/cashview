@@ -119,7 +119,7 @@
              $color = $colorMap[$key];
              imagesetthickness ( $diagramm30 , 3 );
              for($rad = 0; $rad <= 50; $rad++) {
-               imagearc($diagramm30, $start_x, $start_y, round($radius-$rad), round($radius-$rad), $start, $winkel, $color);  //because gap
+               imagearc($diagramm30, round($start_x), round($start_y), round($radius-$rad), round($radius-$rad), $start, $winkel, $color);  //because gap
              }
              $unterkante = $rand_oben+$punktbreite+($i-1)*($punktbreite+$abstand);
              imagefilledrectangle($diagramm30, $rand_links, $rand_oben+($i-1)*($punktbreite+$abstand), $rand_links+$punktbreite, $unterkante, $color);
