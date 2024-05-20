@@ -142,9 +142,9 @@
                if($tempGuthaben < $minGuthaben) $minGuthaben = $tempGuthaben;
            }
 
-           $xperday = ($breite-($rand_links+40))/30;
-           $ypereuro = ($hoehe-$rand_oben)/($maxGuthaben-$minGuthaben);
-           $posxachse = $hoehe-$rand_oben-$ypereuro*(0-$minGuthaben);
+           $xperday = round($breite-($rand_links+40))/30;
+           $ypereuro = round($hoehe-$rand_oben)/($maxGuthaben-$minGuthaben);
+           $posxachse = round($hoehe-$rand_oben-$ypereuro*(0-$minGuthaben));
            if($posxachse > $hoehe-$rand_oben) $posxachse= ($hoehe-$rand_oben);
 
            //Liniendiagramm bauen
@@ -176,16 +176,16 @@
            for($dat=30; $dat>=0; $dat--) {
              $date = new DateTime("-".$dat." days");
              if($dat%5==0) {
-               imagettftext($diagrammLine, 8, 70, ($rand_links+40+$xperday*(30-$dat)-8), ($hoehe+10) , $schwarz, "media/NotoSans-Regular.ttf", str_pad($date->format("d.m."), strlen($maxGuthaben), " ", STR_PAD_LEFT));
-               imageline($diagrammLine, ($rand_links+40+$xperday*(30-$dat)), $posxachse, round($rand_links+40+$xperday*(30-$dat)), $posxachse+2, $schwarz);
+               imagettftext($diagrammLine, 8, 70, round($rand_links+40+$xperday*(30-$dat)-8), ($hoehe+10) , $schwarz, "media/NotoSans-Regular.ttf", str_pad($date->format("d.m."), strlen($maxGuthaben), " ", STR_PAD_LEFT));
+               imageline($diagrammLine, round($rand_links+40+$xperday*(30-$dat)), $posxachse, round($rand_links+40+$xperday*(30-$dat)), $posxachse+2, $schwarz);
              }
              if($date->format("D") == "Sat") {
                imagesetthickness ( $diagrammLine , $xperday );
-               imageline($diagrammLine, ($rand_links+40+$xperday*(30-$dat)), $posxachse-1, round($rand_links+40+$xperday*(30-$dat)), 0, $lightyellow);
+               imageline($diagrammLine, round($rand_links+40+$xperday*(30-$dat)), $posxachse-1, round($rand_links+40+$xperday*(30-$dat)), 0, $lightyellow);
              }
              if($date->format("D") == "Sun") {
                imagesetthickness ( $diagrammLine , $xperday );
-               imageline($diagrammLine, ($rand_links+40+$xperday*(30-$dat)), $posxachse-1, ($rand_links+40+$xperday*(30-$dat)), 0, $yellow);
+               imageline($diagrammLine, round($rand_links+40+$xperday*(30-$dat)), $posxachse-1, round($rand_links+40+$xperday*(30-$dat)), 0, $yellow);
              }
              imagesetthickness ($diagrammLine , 1 );
            }
