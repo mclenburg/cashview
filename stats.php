@@ -180,11 +180,11 @@
                imageline($diagrammLine, round($rand_links+40+$xperday*(30-$dat)), $posxachse, round($rand_links+40+$xperday*(30-$dat)), $posxachse+2, $schwarz);
              }
              if($date->format("D") == "Sat") {
-               imagesetthickness ( $diagrammLine , $xperday );
+               imagesetthickness ( $diagrammLine , round($xperday) );
                imageline($diagrammLine, round($rand_links+40+$xperday*(30-$dat)), $posxachse-1, round($rand_links+40+$xperday*(30-$dat)), 0, $lightyellow);
              }
              if($date->format("D") == "Sun") {
-               imagesetthickness ( $diagrammLine , $xperday );
+               imagesetthickness ( $diagrammLine , round($xperday) );
                imageline($diagrammLine, round($rand_links+40+$xperday*(30-$dat)), $posxachse-1, round($rand_links+40+$xperday*(30-$dat)), 0, $yellow);
              }
              imagesetthickness ($diagrammLine , 1 );
@@ -194,7 +194,7 @@
            if($minGuthaben<0) {
              $minGuthaben=0;
            }
-           $posy_alt = $posxachse-($ypereuro*$rest)+($ypereuro*$minGuthaben);
+           $posy_alt = round($posxachse-($ypereuro*$rest)+($ypereuro*$minGuthaben));
            $dat_alt = 30;
            for($dat=29; $dat>=0; $dat--) {
                $found = false;
@@ -202,14 +202,14 @@
                  $date = new DateTime("-".$dat." days");
                  if(strtotime($key) == strtotime($date->format("Y-m-d"))) {
                      $rest -= $value;
-                     imageline($diagrammLine, ($rand_links+40)+$xperday*(30-$dat_alt), $posy_alt, ($rand_links+40)+$xperday*(30-$dat), $posxachse-($ypereuro*$rest)+($ypereuro*$minGuthaben), $schwarz);
+                     imageline($diagrammLine, round(($rand_links+40)+$xperday*(30-$dat_alt)), $posy_alt, round($rand_links+40)+$xperday*(30-$dat), round($posxachse-($ypereuro*$rest)+($ypereuro*$minGuthaben)), $schwarz);
                      $posy_alt = $posxachse-($ypereuro*$rest) + ($ypereuro*$minGuthaben);
                      $dat_alt = $dat;
                      $found = true;
                  }
                }
                if(!$found) {
-                 imageline($diagrammLine, ($rand_links+40)+$xperday*(30-$dat_alt), $posy_alt, ($rand_links+40)+$xperday*(30-$dat), $posy_alt, $schwarz);
+                 imageline($diagrammLine, round(($rand_links+40)+$xperday*(30-$dat_alt)), $posy_alt, round(($rand_links+40)+$xperday*(30-$dat)), round($posy_alt), $schwarz);
                  $dat_alt = $dat;
                }
            }
