@@ -23,7 +23,9 @@
              $mandant = $_GET["manId"];
            }
            else {
-             die "Mandanten-ID nicht übergeben";
+             echo("Mandanten-ID nicht übergeben");
+             echo("</body></html>");
+             return;
            }
 
            $anzahl_tage = date("t");
