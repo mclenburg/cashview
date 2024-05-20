@@ -11,16 +11,20 @@
 </head>
 <body>
   <?php
+           error_reporting(E_ALL);
+           ini_set('display_errors', 1);
+
            $mandant = -1;
            if(isset($_POST["manId"]))
            {
              $mandant = $_POST["manId"];
            }
-           else {
+           elseif(isset($_GET["manId"])){
              $mandant = $_GET["manId"];
            }
-           error_reporting(E_ALL);
-           ini_set('display_errors', 1);
+           else {
+             die "Mandanten-ID nicht übergeben";
+           }
 
            $anzahl_tage = date("t");
            $heute = date("d");
