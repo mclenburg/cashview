@@ -209,7 +209,7 @@
                  }
                }
                if(!$found) {
-                 imageline($diagrammLine, round(($rand_links+40)+$xperday*(30-$dat_alt)), $posy_alt, round(($rand_links+40)+$xperday*(30-$dat)), round($posy_alt), $schwarz);
+                 imageline($diagrammLine, round(($rand_links+40)+$xperday*(30-$dat_alt)), round($posy_alt), round(($rand_links+40)+$xperday*(30-$dat)), round($posy_alt), $schwarz);
                  $dat_alt = $dat;
                }
            }
