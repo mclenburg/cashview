@@ -30,7 +30,7 @@
 
            $anzahl_tage = date("t");
            $heute = date("d");
-           $resttage = $anzahl_tage - $heute + 1; //plus 1, da heute ja auch noch zur Verfügung steht
+           $resttage = $anzahl_tage - $heute + 1;
 
   	       $name = gethostbyaddr($_SERVER['REMOTE_ADDR']);
   		   ($GLOBALS["___mysqli_ston"] = mysqli_connect("192.168.5.103",  "cashview",  "cash123", "cashview"))  or die("ERROR connecting to database.");
@@ -41,13 +41,14 @@
            $init = mysqli_fetch_assoc($resultInit)["wert"];
            $rest = $init - $rest;
 
-  		   $queryAll = "select sum(trans.wert) summe, kat.bez, kat.ID, kat.statscolor from transaktionen trans left outer join kategorien kat on trans.katID = kat.ID where wert > 0 and manId = $mandant group by katID order by sortorder";
-  		   $query30 = "select sum(trans.wert) summe, kat.bez from transaktionen trans left outer join kategorien kat on trans.katID = kat.ID where wert > 0 and manId = $mandant and trans.Datum > DATE_SUB(CURRENT_DATE(),INTERVAL 30 DAY) group by katID order by sortorder";
+           // Angepasst: Berücksichtige globale und mandantenspezifische Kategorien
+  		   $queryAll = "select sum(trans.wert) summe, kat.bez, kat.ID, kat.statscolor from transaktionen trans left outer join kategorien kat on trans.katID = kat.ID where wert > 0 and trans.manId = $mandant and (kat.manId = 0 OR kat.manId = $mandant) group by katID order by sortorder";
+  		   $query30 = "select sum(trans.wert) summe, kat.bez from transaktionen trans left outer join kategorien kat on trans.katID = kat.ID where wert > 0 and trans.manId = $mandant and trans.Datum > DATE_SUB(CURRENT_DATE(),INTERVAL 30 DAY) and (kat.manId = 0 OR kat.manId = $mandant) group by katID order by sortorder";
 
            $resultAll = mysqli_query($GLOBALS["___mysqli_ston"], $queryAll)or die("$queryAll " .mysqli_error($GLOBALS["___mysqli_ston"]));
            $result30 = mysqli_query($GLOBALS["___mysqli_ston"], $query30)or die("$query30 " .mysqli_error($GLOBALS["___mysqli_ston"]));
 
-           $querySumPerKat30 = "select sum(t.wert) wert, k.bez kategorie from transaktionen t inner join kategorien k on t.katID = k.ID where date(t.Datum) >= date(DATE_SUB(CURRENT_DATE(),INTERVAL 30 DAY)) and k.bez != 'Gehalt' and manId = $mandant group by k.bez order by k.sortorder";
+           $querySumPerKat30 = "select sum(t.wert) wert, k.bez kategorie from transaktionen t inner join kategorien k on t.katID = k.ID where date(t.Datum) >= date(DATE_SUB(CURRENT_DATE(),INTERVAL 30 DAY)) and k.bez != 'Gehalt' and t.manId = $mandant and (k.manId = 0 OR k.manId = $mandant) group by k.bez order by k.sortorder";
            $sumPerKat30 = mysqli_query($GLOBALS["___mysqli_ston"], $querySumPerKat30)or die("$querySumPerKat30 " .mysqli_error($GLOBALS["___mysqli_ston"]));
 
            $breite = 350;
@@ -107,7 +108,7 @@
              $color = $colorMap[$key];
              imagesetthickness ( $diagrammAll , 3 );
              for($rad = 0; $rad <= 50; $rad++) {
-               imagearc($diagrammAll, round($start_x), round($start_y), round($radius-$rad), round($radius-$rad), $start, $winkel, $color);  //because gap
+               imagearc($diagrammAll, round($start_x), round($start_y), round($radius-$rad), round($radius-$rad), $start, $winkel, $color);
              }
              $unterkante = $rand_oben+$punktbreite+($i-1)*($punktbreite+$abstand);
              imagefilledrectangle($diagrammAll, $rand_links, $rand_oben+($i-1)*($punktbreite+$abstand), $rand_links+$punktbreite, $unterkante, $color);
@@ -125,14 +126,13 @@
              $color = $colorMap[$key];
              imagesetthickness ( $diagramm30 , 3 );
              for($rad = 0; $rad <= 50; $rad++) {
-               imagearc($diagramm30, round($start_x), round($start_y), round($radius-$rad), round($radius-$rad), $start, $winkel, $color);  //because gap
+               imagearc($diagramm30, round($start_x), round($start_y), round($radius-$rad), round($radius-$rad), $start, $winkel, $color);
              }
              $unterkante = $rand_oben+$punktbreite+($i-1)*($punktbreite+$abstand);
              imagefilledrectangle($diagramm30, $rand_links, $rand_oben+($i-1)*($punktbreite+$abstand), $rand_links+$punktbreite, $unterkante, $color);
              imagettftext($diagramm30, $schriftgroesse, 0, $rand_links+$punktbreite+5, $unterkante-$punktbreite/2+$schriftgroesse/2, $schwarz, "media/NotoSans-Regular.ttf", $key." ".round($value*100/$gesamt30, 1)." %");
            }
 
-           //maxGuthaben ermitteln, ausgehend von $rest
            $maxGuthaben = $rest;
            $minGuthaben = $rest;
            $tempGuthaben = $rest;
@@ -147,9 +147,8 @@
            $posxachse = round($hoehe-$rand_oben-$ypereuro*(0-$minGuthaben));
            if($posxachse > $hoehe-$rand_oben) $posxachse= ($hoehe-$rand_oben);
 
-           //Liniendiagramm bauen
-           imageline($diagrammLine, ($rand_links+40), 0, ($rand_links+40), ($hoehe-$rand_oben+3), $schwarz); //Y-Achse
-           imageline($diagrammLine, round($rand_links+37), round($posxachse), $breite, round($posxachse), $schwarz); //X-Achse
+           imageline($diagrammLine, ($rand_links+40), 0, ($rand_links+40), ($hoehe-$rand_oben+3), $schwarz);
+           imageline($diagrammLine, round($rand_links+37), round($posxachse), $breite, round($posxachse), $schwarz);
            if($minGuthaben > 0) {
              imagettftext($diagrammLine, $schriftgroesse, 0, $rand_links+5, round($posxachse) , $schwarz, "media/NotoSans-Regular.ttf", round($minGuthaben,-1));
            }
@@ -157,7 +156,6 @@
              imagettftext($diagrammLine, $schriftgroesse, 0, $rand_links+5, round($posxachse) , $schwarz, "media/NotoSans-Regular.ttf", 0);
            }
 
-           //Y-Achse beschriften
            imagettftext($diagrammLine, $schriftgroesse, 90, $rand_links, $hoehe/2+$schriftgroesse/2, $schwarz, "media/NotoSans-Regular.ttf", "Guthaben");
            $i = 0;
            $lichtgrau = imagecolorallocate($diagrammLine, 200, 200, 200);
@@ -172,7 +170,6 @@
              $i++;
            }
 
-           //X-Achse beschriften
            for($dat=30; $dat>=0; $dat--) {
              $date = new DateTime("-".$dat." days");
              if($dat%5==0) {
@@ -190,7 +187,6 @@
              imagesetthickness ($diagrammLine , 1 );
            }
 
-           //Werte eintragen
            if($minGuthaben<0) {
              $minGuthaben=0;
            }
@@ -217,6 +213,7 @@
   <div class="container">
   	      <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
   	        <span class="navbar-brand">CashView - Statistik</span>
+            <a class="btn btn-secondary d-inline-block float-right" href="index.php?manId=<?php echo $mandant; ?>" role="button">Zurück</a>
   	      </nav>
 
           <div class="card">

@@ -62,7 +62,9 @@
 
 	    <div class="container">
 	      <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-	        <?php echo("<span class=\"navbar-brand\">CashView</span><a class=\"btn btn-secondary d-inline-block float-right\" href=\"stats.php?manId=$mandant\" role=\"button\">Statistik</a>");
+	        <?php echo("<span class=\"navbar-brand\">CashView</span>
+                       <a class=\"btn btn-secondary d-inline-block float-right ml-2\" href=\"stats.php?manId=$mandant\" role=\"button\">Statistik</a>
+                       <a class=\"btn btn-secondary d-inline-block float-right\" href=\"config.php?manId=$mandant\" role=\"button\">Konfiguration</a>");
 	        ?>
 	      </nav>
 
@@ -160,7 +162,8 @@
                     </div>
                     <select name="zweck" size=1 aria-label="Zweck" aria-describedby="zweck">
                       <?php
-                        $query = "select ID, Bez from kategorien where sortorder <> 999 order by sortorder";
+                        // Angepasst: Zeige globale (manId=0) und mandantenspezifische Kategorien
+                        $query = "select ID, Bez from kategorien where (manId = 0 OR manId = $mandant) AND sortorder <> 999 order by sortorder";
                         $result = mysqli_query($GLOBALS["___mysqli_ston"], $query) or die("ERROR: " .mysqli_error($GLOBALS["___mysqli_ston"]));
                         while($kat_row = mysqli_fetch_assoc($result))
                         {
