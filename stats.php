@@ -414,6 +414,17 @@
             color: #28a745;
         }
 
+        /* Debug Info */
+        .debug-info {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            padding: 1rem;
+            border-radius: 6px;
+            margin: 1rem 0;
+            font-size: 0.85rem;
+            font-family: monospace;
+        }
+
         @media only screen and (min-width: 768px) {
             .trend-bar-container {
                 height: 40px;
@@ -466,23 +477,32 @@
            $querySumPerKat30 = "select sum(t.wert) wert, k.bez kategorie from transaktionen t inner join kategorien k on t.katID = k.ID where date(t.Datum) >= date(DATE_SUB(CURRENT_DATE(),INTERVAL 30 DAY)) and k.bez != 'Gehalt' and t.manId = $mandant and (k.manId = 0 OR k.manId = $mandant) group by k.bez order by k.sortorder";
            $sumPerKat30 = mysqli_query($GLOBALS["___mysqli_ston"], $querySumPerKat30)or die("$querySumPerKat30 " .mysqli_error($GLOBALS["___mysqli_ston"]));
 
-           // Monatsvergleich für die letzten 3 Monate
+           // 30-Tage-Perioden Vergleich (rollierend)
            $monthlyComparison = array();
            for($i = 0; $i < 3; $i++) {
-               $startDate = date('Y-m-01', strtotime("-$i months"));
-               $endDate = date('Y-m-t', strtotime("-$i months"));
-               $monthName = date('M Y', strtotime("-$i months"));
+               $endDays = $i * 30;
+               $startDays = $endDays + 30;
+
+               $endDate = date('Y-m-d', strtotime("-$endDays days"));
+               $startDate = date('Y-m-d', strtotime("-$startDays days"));
+
+               // Label für die Periode
+               if($i == 0) {
+                   $periodName = "Letzte 30 Tage";
+               } else {
+                   $periodName = "Vor " . ($i * 30) . "-" . (($i + 1) * 30) . " Tagen";
+               }
 
                $queryMonth = "SELECT SUM(wert) as total FROM transaktionen
                              WHERE manId = $mandant
                              AND wert > 0
-                             AND DATE(Datum) >= '$startDate'
+                             AND DATE(Datum) > '$startDate'
                              AND DATE(Datum) <= '$endDate'";
                $resultMonth = mysqli_query($GLOBALS["___mysqli_ston"], $queryMonth);
                $row = mysqli_fetch_assoc($resultMonth);
 
                $monthlyComparison[] = array(
-                   'month' => $monthName,
+                   'period' => $periodName,
                    'total' => $row['total'] ? $row['total'] : 0,
                    'startDate' => $startDate,
                    'endDate' => $endDate
@@ -492,26 +512,9 @@
            // Durchschnitt berechnen
            $avgMonthly = array_sum(array_column($monthlyComparison, 'total')) / 3;
 
-           // Trend berechnen (aktueller Monat vs. Durchschnitt)
-           $currentMonth = $monthlyComparison[0]['total'];
-           $trendPercent = $avgMonthly > 0 ? (($currentMonth - $avgMonthly) / $avgMonthly * 100) : 0;
-
-           // Kategorie-Vergleich zwischen aktuellem und letztem Monat
-           $queryCatCompare = "SELECT
-               k.bez as kategorie,
-               SUM(CASE WHEN DATE(t.Datum) >= DATE_FORMAT(CURRENT_DATE(), '%Y-%m-01') THEN t.wert ELSE 0 END) as current_month,
-               SUM(CASE WHEN DATE(t.Datum) >= DATE_FORMAT(DATE_SUB(CURRENT_DATE(), INTERVAL 1 MONTH), '%Y-%m-01')
-                        AND DATE(t.Datum) < DATE_FORMAT(CURRENT_DATE(), '%Y-%m-01') THEN t.wert ELSE 0 END) as last_month
-               FROM transaktionen t
-               INNER JOIN kategorien k ON t.katID = k.ID
-               WHERE t.manId = $mandant
-               AND t.wert > 0
-               AND k.bez != 'Gehalt'
-               AND (k.manId = 0 OR k.manId = $mandant)
-               AND DATE(t.Datum) >= DATE_FORMAT(DATE_SUB(CURRENT_DATE(), INTERVAL 2 MONTH), '%Y-%m-01')
-               GROUP BY k.bez
-               ORDER BY current_month DESC";
-           $resultCatCompare = mysqli_query($GLOBALS["___mysqli_ston"], $queryCatCompare)or die("$queryCatCompare " .mysqli_error($GLOBALS["___mysqli_ston"]));
+           // Trend berechnen (aktuelle 30 Tage vs. Durchschnitt)
+           $currentPeriod = $monthlyComparison[0]['total'];
+           $trendPercent = $avgMonthly > 0 ? (($currentPeriod - $avgMonthly) / $avgMonthly * 100) : 0;
 
            $breite = 350;
            $hoehe = 250;
