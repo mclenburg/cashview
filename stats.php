@@ -8,6 +8,422 @@
     <link rel="stylesheet" href="https://cdn.datatables.net/1.10.24/css/dataTables.bootstrap4.min.css">
     <link href="favicon.ico" rel="shortcut icon">
     <link rel="icon" href="favicon.ico" type="image/ico">
+    <style>
+        /* Mobile First Styles */
+        body {
+            font-size: 14px;
+            padding: 0;
+            margin: 0;
+        }
+
+        .container {
+            padding-left: 10px;
+            padding-right: 10px;
+        }
+
+        /* Navigation optimiert für Mobile */
+        .navbar {
+            padding: 0.5rem 1rem;
+            flex-wrap: wrap;
+        }
+
+        .navbar-brand {
+            font-size: 1.1rem;
+            margin-right: auto;
+        }
+
+        .btn-back {
+            font-size: 0.85rem;
+            padding: 0.4rem 0.8rem;
+        }
+
+        /* Cards für Mobile */
+        .card {
+            margin-bottom: 1rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .card-header {
+            padding: 0.75rem 1rem;
+            background-color: #f8f9fa;
+        }
+
+        .card-title {
+            font-size: 1.1rem;
+            margin-bottom: 0;
+        }
+
+        .card-body {
+            padding: 1rem;
+        }
+
+        /* Verfügbar pro Tag - Extra prominent */
+        .daily-amount {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #28a745;
+            text-align: center;
+            padding: 1.5rem 0;
+        }
+
+        /* Diagramme responsive */
+        .chart-container {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .chart-container img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            margin: 0 auto;
+        }
+
+        /* Tabelle responsive */
+        .table-responsive {
+            font-size: 0.9rem;
+        }
+
+        #KatTable {
+            font-size: 0.85rem;
+        }
+
+        #KatTable thead th {
+            position: sticky;
+            top: 0;
+            background-color: #f8f9fa;
+            z-index: 10;
+        }
+
+        /* DataTables Mobile Optimierung */
+        .dataTables_wrapper .dataTables_length,
+        .dataTables_wrapper .dataTables_filter,
+        .dataTables_wrapper .dataTables_info,
+        .dataTables_wrapper .dataTables_paginate {
+            font-size: 0.85rem;
+        }
+
+        /* iPhone 13 (390x844) */
+        @media only screen and (min-width: 390px) and (max-width: 428px) {
+            .container {
+                max-width: 100%;
+                padding-left: 12px;
+                padding-right: 12px;
+            }
+
+            .chart-container img {
+                width: 100%;
+                max-width: 370px;
+            }
+
+            .daily-amount {
+                font-size: 2.2rem;
+            }
+        }
+
+        /* iPad 10 (820x1180) */
+        @media only screen and (min-width: 768px) and (max-width: 1024px) {
+            body {
+                font-size: 16px;
+            }
+
+            .container {
+                max-width: 760px;
+                padding-left: 20px;
+                padding-right: 20px;
+            }
+
+            .card-title {
+                font-size: 1.3rem;
+            }
+
+            .daily-amount {
+                font-size: 2.5rem;
+                padding: 2rem 0;
+            }
+
+            .chart-container {
+                display: flex;
+                justify-content: center;
+            }
+
+            .chart-container img {
+                max-width: 500px;
+            }
+
+            /* Zwei Spalten Layout für Diagramme */
+            .chart-grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 1rem;
+            }
+
+            .chart-grid .card {
+                margin-bottom: 0;
+            }
+
+            #KatTable {
+                font-size: 1rem;
+            }
+        }
+
+        /* Desktop (1920x1080 und größer) */
+        @media only screen and (min-width: 1025px) {
+            body {
+                font-size: 16px;
+            }
+
+            .container {
+                max-width: 1140px;
+                padding-left: 15px;
+                padding-right: 15px;
+            }
+
+            .navbar-brand {
+                font-size: 1.5rem;
+            }
+
+            .btn-back {
+                font-size: 1rem;
+                padding: 0.5rem 1.5rem;
+            }
+
+            .card-title {
+                font-size: 1.5rem;
+            }
+
+            .daily-amount {
+                font-size: 3rem;
+                padding: 2.5rem 0;
+            }
+
+            .chart-container img {
+                max-width: 600px;
+            }
+
+            /* Drei Spalten Layout für kleinere Charts */
+            .chart-grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 1.5rem;
+                margin-bottom: 1.5rem;
+            }
+
+            .chart-grid .card {
+                margin-bottom: 0;
+            }
+
+            /* Volle Breite für Liniendiagramm */
+            .chart-full {
+                grid-column: 1 / -1;
+            }
+
+            #KatTable {
+                font-size: 1rem;
+            }
+
+            .table-responsive {
+                font-size: 1rem;
+            }
+        }
+
+        /* Landscape Modus für Mobilgeräte */
+        @media only screen and (max-width: 926px) and (orientation: landscape) {
+            .chart-container img {
+                max-width: 450px;
+            }
+
+            .daily-amount {
+                font-size: 1.8rem;
+                padding: 1rem 0;
+            }
+        }
+
+        /* Touch-Optimierungen */
+        @media (hover: none) and (pointer: coarse) {
+            .btn {
+                min-height: 44px;
+                min-width: 44px;
+            }
+
+            .card {
+                margin-bottom: 1.2rem;
+            }
+        }
+
+        /* Dark Mode Support */
+        @media (prefers-color-scheme: dark) {
+            body {
+                background-color: #121212;
+                color: #ffffff;
+            }
+
+            .card {
+                background-color: #1e1e1e;
+                border-color: #333;
+            }
+
+            .card-header {
+                background-color: #2a2a2a;
+                border-bottom-color: #333;
+            }
+
+            .table {
+                color: #ffffff;
+            }
+
+            .table-striped tbody tr:nth-of-type(odd) {
+                background-color: rgba(255, 255, 255, 0.05);
+            }
+        }
+
+        /* Trend-Analyse Styles */
+        .trend-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .trend-bar-wrapper {
+            margin-bottom: 1rem;
+        }
+
+        .trend-month {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .trend-amount {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .trend-bar-container {
+            background: #e9ecef;
+            border-radius: 8px;
+            height: 30px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .trend-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            border-radius: 8px;
+            transition: width 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 10px;
+            color: white;
+            font-size: 0.85rem;
+            font-weight: bold;
+        }
+
+        .trend-bar.current-month {
+            background: linear-gradient(90deg, #28a745 0%, #20c997 100%);
+        }
+
+        .trend-summary {
+            background: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-top: 1rem;
+            text-align: center;
+        }
+
+        .trend-summary h6 {
+            margin-bottom: 1rem;
+            color: #495057;
+        }
+
+        .trend-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1.5rem;
+            font-weight: bold;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+        }
+
+        .trend-up {
+            color: #dc3545;
+            background: #ffe6e6;
+        }
+
+        .trend-down {
+            color: #28a745;
+            background: #e6ffe6;
+        }
+
+        .trend-neutral {
+            color: #ffc107;
+            background: #fff8e1;
+        }
+
+        .category-comparison {
+            margin-top: 1rem;
+        }
+
+        .category-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem;
+            margin-bottom: 0.5rem;
+            background: #f8f9fa;
+            border-radius: 6px;
+            border-left: 4px solid #667eea;
+        }
+
+        .category-name {
+            font-weight: 600;
+            flex: 1;
+        }
+
+        .category-values {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            font-size: 0.9rem;
+        }
+
+        .category-change {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 0.85rem;
+        }
+
+        .category-change.positive {
+            background: #ffe6e6;
+            color: #dc3545;
+        }
+
+        .category-change.negative {
+            background: #e6ffe6;
+            color: #28a745;
+        }
+
+        @media only screen and (min-width: 768px) {
+            .trend-bar-container {
+                height: 40px;
+            }
+
+            .trend-amount {
+                font-size: 1rem;
+            }
+        }
+    </style>
 </head>
 <body>
   <?php
@@ -41,8 +457,7 @@
            $init = mysqli_fetch_assoc($resultInit)["wert"];
            $rest = $init - $rest;
 
-           // Angepasst: Berücksichtige globale und mandantenspezifische Kategorien
-  		   $queryAll = "select sum(trans.wert) summe, kat.bez, kat.ID, kat.statscolor from transaktionen trans left outer join kategorien kat on trans.katID = kat.ID where wert > 0 and trans.manId = $mandant and (kat.manId = 0 OR kat.manId = $mandant) group by katID order by sortorder";
+           $queryAll = "select sum(trans.wert) summe, kat.bez, kat.ID, kat.statscolor from transaktionen trans left outer join kategorien kat on trans.katID = kat.ID where wert > 0 and trans.manId = $mandant and (kat.manId = 0 OR kat.manId = $mandant) group by katID order by sortorder";
   		   $query30 = "select sum(trans.wert) summe, kat.bez from transaktionen trans left outer join kategorien kat on trans.katID = kat.ID where wert > 0 and trans.manId = $mandant and trans.Datum > DATE_SUB(CURRENT_DATE(),INTERVAL 30 DAY) and (kat.manId = 0 OR kat.manId = $mandant) group by katID order by sortorder";
 
            $resultAll = mysqli_query($GLOBALS["___mysqli_ston"], $queryAll)or die("$queryAll " .mysqli_error($GLOBALS["___mysqli_ston"]));
@@ -50,6 +465,53 @@
 
            $querySumPerKat30 = "select sum(t.wert) wert, k.bez kategorie from transaktionen t inner join kategorien k on t.katID = k.ID where date(t.Datum) >= date(DATE_SUB(CURRENT_DATE(),INTERVAL 30 DAY)) and k.bez != 'Gehalt' and t.manId = $mandant and (k.manId = 0 OR k.manId = $mandant) group by k.bez order by k.sortorder";
            $sumPerKat30 = mysqli_query($GLOBALS["___mysqli_ston"], $querySumPerKat30)or die("$querySumPerKat30 " .mysqli_error($GLOBALS["___mysqli_ston"]));
+
+           // Monatsvergleich für die letzten 3 Monate
+           $monthlyComparison = array();
+           for($i = 0; $i < 3; $i++) {
+               $startDate = date('Y-m-01', strtotime("-$i months"));
+               $endDate = date('Y-m-t', strtotime("-$i months"));
+               $monthName = date('M Y', strtotime("-$i months"));
+
+               $queryMonth = "SELECT SUM(wert) as total FROM transaktionen
+                             WHERE manId = $mandant
+                             AND wert > 0
+                             AND DATE(Datum) >= '$startDate'
+                             AND DATE(Datum) <= '$endDate'";
+               $resultMonth = mysqli_query($GLOBALS["___mysqli_ston"], $queryMonth);
+               $row = mysqli_fetch_assoc($resultMonth);
+
+               $monthlyComparison[] = array(
+                   'month' => $monthName,
+                   'total' => $row['total'] ? $row['total'] : 0,
+                   'startDate' => $startDate,
+                   'endDate' => $endDate
+               );
+           }
+
+           // Durchschnitt berechnen
+           $avgMonthly = array_sum(array_column($monthlyComparison, 'total')) / 3;
+
+           // Trend berechnen (aktueller Monat vs. Durchschnitt)
+           $currentMonth = $monthlyComparison[0]['total'];
+           $trendPercent = $avgMonthly > 0 ? (($currentMonth - $avgMonthly) / $avgMonthly * 100) : 0;
+
+           // Kategorie-Vergleich zwischen aktuellem und letztem Monat
+           $queryCatCompare = "SELECT
+               k.bez as kategorie,
+               SUM(CASE WHEN DATE(t.Datum) >= DATE_FORMAT(CURRENT_DATE(), '%Y-%m-01') THEN t.wert ELSE 0 END) as current_month,
+               SUM(CASE WHEN DATE(t.Datum) >= DATE_FORMAT(DATE_SUB(CURRENT_DATE(), INTERVAL 1 MONTH), '%Y-%m-01')
+                        AND DATE(t.Datum) < DATE_FORMAT(CURRENT_DATE(), '%Y-%m-01') THEN t.wert ELSE 0 END) as last_month
+               FROM transaktionen t
+               INNER JOIN kategorien k ON t.katID = k.ID
+               WHERE t.manId = $mandant
+               AND t.wert > 0
+               AND k.bez != 'Gehalt'
+               AND (k.manId = 0 OR k.manId = $mandant)
+               AND DATE(t.Datum) >= DATE_FORMAT(DATE_SUB(CURRENT_DATE(), INTERVAL 2 MONTH), '%Y-%m-01')
+               GROUP BY k.bez
+               ORDER BY current_month DESC";
+           $resultCatCompare = mysqli_query($GLOBALS["___mysqli_ston"], $queryCatCompare)or die("$queryCatCompare " .mysqli_error($GLOBALS["___mysqli_ston"]));
 
            $breite = 350;
            $hoehe = 250;
@@ -213,98 +675,229 @@
   <div class="container">
   	      <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
   	        <span class="navbar-brand">CashView - Statistik</span>
-            <a class="btn btn-secondary d-inline-block float-right" href="index.php?manId=<?php echo $mandant; ?>" role="button">Zurück</a>
+            <a class="btn btn-secondary btn-back" href="index.php?manId=<?php echo $mandant; ?>" role="button">Zurück</a>
   	      </nav>
 
+          <!-- Verfügbar pro Tag - Prominent platziert -->
           <div class="card">
-                        <div class="card-header"><h5 class="d-inline-block card-title">verf&uuml;gbar pro Tag</h5>
-                        </div>
-                        <div class="card-body">
-                          <p class="card-text">
-            	            <?php
-                             echo("<b>".round($rest/$resttage,2)." €</b>");
-                          ?>
-            	            </p>
-            	          </div>
-            	      </div>
+            <div class="card-header">
+              <h5 class="card-title">Verfügbar pro Tag</h5>
+            </div>
+            <div class="card-body">
+              <div class="daily-amount">
+                <?php echo(number_format(round($rest/$resttage,2), 2, ',', '.') ." €"); ?>
+              </div>
+            </div>
+          </div>
+
+          <!-- Monatsvergleich / Trendanalyse -->
           <div class="card">
-              <div class="card-header"><h5 class="d-inline-block card-title">letzte 30 Tage</h5>
+            <div class="card-header">
+              <h5 class="card-title">📈 Ausgaben-Trend (3 Monate)</h5>
+            </div>
+            <div class="card-body">
+              <div class="trend-container">
+                <?php
+                  // Maximalen Wert für Balkenbreite finden
+                  $maxValue = max(array_column($monthlyComparison, 'total'));
+
+                  foreach($monthlyComparison as $index => $month) {
+                    $barWidth = $maxValue > 0 ? ($month['total'] / $maxValue * 100) : 0;
+                    $isCurrent = $index === 0;
+                    $barClass = $isCurrent ? 'current-month' : '';
+
+                    echo('<div class="trend-bar-wrapper">');
+                    echo('<div class="trend-month">');
+                    echo('<span>' . $month['month'] . ($isCurrent ? ' (aktuell)' : '') . '</span>');
+                    echo('<span class="trend-amount">' . number_format($month['total'], 2, ',', '.') . ' €</span>');
+                    echo('</div>');
+                    echo('<div class="trend-bar-container">');
+                    echo('<div class="trend-bar ' . $barClass . '" style="width: ' . $barWidth . '%"></div>');
+                    echo('</div>');
+                    echo('</div>');
+                  }
+                ?>
+
+                <div class="trend-summary">
+                  <h6>Trend-Analyse</h6>
+                  <div>
+                    <div>Durchschnitt (3 Monate): <strong><?php echo number_format($avgMonthly, 2, ',', '.'); ?> €</strong></div>
+                    <?php
+                      if(abs($trendPercent) < 5) {
+                        echo('<div class="trend-indicator trend-neutral">');
+                        echo('≈ ' . number_format(abs($trendPercent), 1) . '% Stabil');
+                      } elseif($trendPercent > 0) {
+                        echo('<div class="trend-indicator trend-up">');
+                        echo('↑ +' . number_format($trendPercent, 1) . '% Höher');
+                      } else {
+                        echo('<div class="trend-indicator trend-down">');
+                        echo('↓ ' . number_format($trendPercent, 1) . '% Niedriger');
+                      }
+                      echo('</div>');
+
+                      // Textliche Interpretation
+                      if(abs($trendPercent) < 5) {
+                        echo('<p style="margin-top: 1rem; color: #666; font-size: 0.9rem;">Deine Ausgaben sind stabil.</p>');
+                      } elseif($trendPercent > 0) {
+                        echo('<p style="margin-top: 1rem; color: #666; font-size: 0.9rem;">Du gibst mehr aus als im Durchschnitt der letzten 3 Monate.</p>');
+                      } else {
+                        echo('<p style="margin-top: 1rem; color: #666; font-size: 0.9rem;">Gut gemacht! Du gibst weniger aus als im Durchschnitt.</p>');
+                      }
+                    ?>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Kategorie-Vergleich: Aktueller vs. Letzter Monat -->
+          <div class="card">
+            <div class="card-header">
+              <h5 class="card-title">📊 Kategorien im Vergleich</h5>
+              <h6 class="card-subtitle mb-2 text-muted">Aktueller Monat vs. Letzter Monat</h6>
+            </div>
+            <div class="card-body">
+              <div class="category-comparison">
+                <?php
+                  while($cat = mysqli_fetch_assoc($resultCatCompare)) {
+                    $current = $cat['current_month'] ? $cat['current_month'] : 0;
+                    $last = $cat['last_month'] ? $cat['last_month'] : 0;
+
+                    // Nur anzeigen wenn mindestens einer der Werte > 0
+                    if($current > 0 || $last > 0) {
+                      $change = 0;
+                      if($last > 0) {
+                        $change = (($current - $last) / $last) * 100;
+                      } elseif($current > 0) {
+                        $change = 100; // Neue Kategorie
+                      }
+
+                      echo('<div class="category-item">');
+                      echo('<div class="category-name">' . $cat['kategorie'] . '</div>');
+                      echo('<div class="category-values">');
+                      echo('<span style="color: #28a745; font-weight: 600;">' . number_format($current, 2, ',', '.') . ' €</span>');
+
+                      if($last > 0) {
+                        echo('<span style="color: #999;">vs.</span>');
+                        echo('<span style="color: #666;">' . number_format($last, 2, ',', '.') . ' €</span>');
+
+                        if(abs($change) >= 1) {
+                          $changeClass = $change > 0 ? 'positive' : 'negative';
+                          $changeSymbol = $change > 0 ? '↑' : '↓';
+                          echo('<span class="category-change ' . $changeClass . '">');
+                          echo($changeSymbol . ' ' . number_format(abs($change), 0) . '%');
+                          echo('</span>');
+                        }
+                      } else {
+                        echo('<span class="category-change positive">🆕 NEU</span>');
+                      }
+
+                      echo('</div>');
+                      echo('</div>');
+                    }
+                  }
+                ?>
+
+              </div>
+            </div>
+          </div>
+
+          <!-- Chart Grid für Tablet und Desktop -->
+          <div class="chart-grid">
+            <!-- Letzte 30 Tage -->
+            <div class="card">
+              <div class="card-header">
+                <h5 class="card-title">Letzte 30 Tage</h5>
               </div>
               <div class="card-body">
-                <p class="card-text">
-  	            <?php
-  	               ob_start();
-                   imagepng($diagramm30);
-                   $imagedata = ob_get_clean();
-                   echo("<img src=\"data:image/png;base64,".base64_encode($imagedata)."\">");
-                ?>
-  	            </p>
-  	          </div>
-  	      </div>
-  	      <div class="card">
-                        <div class="card-header"><h5 class="d-inline-block card-title">Gesamt</h5>
-                        </div>
-                        <div class="card-body">
-                          <p class="card-text">
-            	            <?php
-                               ob_start();
-                               imagepng($diagrammAll);
-                               $imagedata = ob_get_clean();
-                               echo("<img src=\"data:image/png;base64,".base64_encode($imagedata)."\">");
-                            ?>
-            	            </p>
-            	          </div>
-            	      </div>
+                <div class="chart-container">
+                  <?php
+                     ob_start();
+                     imagepng($diagramm30);
+                     $imagedata = ob_get_clean();
+                     echo("<img src=\"data:image/png;base64,".base64_encode($imagedata)."\" alt=\"Diagramm 30 Tage\">");
+                  ?>
+                </div>
+              </div>
+            </div>
 
-                      <div class="card">
-                          <div class="card-header"><h5 class="d-inline-block card-title">Verlauf (30 Tage)</h5>
-                          </div>
-                          <div class="card-body">
-                            <p class="card-text">
-              	            <?php
-                                 ob_start();
-                                 imagepng($diagrammLine);
-                                 $imagedata = ob_get_clean();
-                                 echo("<img src=\"data:image/png;base64,".base64_encode($imagedata)."\">");
-                              ?>
-              	            </p>
-              	          </div>
-              	      </div>
+            <!-- Gesamt -->
+            <div class="card">
+              <div class="card-header">
+                <h5 class="card-title">Gesamt</h5>
+              </div>
+              <div class="card-body">
+                <div class="chart-container">
+                  <?php
+                     ob_start();
+                     imagepng($diagrammAll);
+                     $imagedata = ob_get_clean();
+                     echo("<img src=\"data:image/png;base64,".base64_encode($imagedata)."\" alt=\"Diagramm Gesamt\">");
+                  ?>
+                </div>
+              </div>
+            </div>
 
-              	      <div class="card">
-                        <div class="card-header"><h5 class="d-inline-block card-title">Aufteilung Kategorien (30 Tage)</h5>
-                        </div>
-                        <div class="card-body">
-                          <p class="card-text">
-                            <table class="table table-striped" id="KatTable">
-                              <thead>
-                                <tr>
-                                  <th>Kategorie</th>
-                                  <th>Betrag</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                            <?php
-                               while( $row = mysqli_fetch_assoc( $sumPerKat30)){
-                                  echo("<tr><td>".$row["kategorie"]."</td><td>".$row["wert"]."</td></tr>");
-                               }
-                            ?>
-                            </tbody>
-                            </table>
-                            </p>
-                          </div>
-                      </div>
+            <!-- Verlauf - Volle Breite auf Desktop -->
+            <div class="card chart-full">
+              <div class="card-header">
+                <h5 class="card-title">Verlauf (30 Tage)</h5>
+              </div>
+              <div class="card-body">
+                <div class="chart-container">
+                  <?php
+                     ob_start();
+                     imagepng($diagrammLine);
+                     $imagedata = ob_get_clean();
+                     echo("<img src=\"data:image/png;base64,".base64_encode($imagedata)."\" alt=\"Verlaufsdiagramm\">");
+                  ?>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Kategorien Tabelle -->
+          <div class="card">
+            <div class="card-header">
+              <h5 class="card-title">Aufteilung Kategorien (30 Tage)</h5>
+            </div>
+            <div class="card-body">
+              <div class="table-responsive">
+                <table class="table table-striped" id="KatTable">
+                  <thead>
+                    <tr>
+                      <th>Kategorie</th>
+                      <th>Betrag</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <?php
+                       while( $row = mysqli_fetch_assoc( $sumPerKat30)){
+                          echo("<tr><td>".$row["kategorie"]."</td><td>".number_format($row["wert"], 2, ',', '.')." €</td></tr>");
+                       }
+                    ?>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
     </div>
+
     <script src="https://code.jquery.com/jquery-3.5.1.js"></script>
     <script src="https://cdn.datatables.net/1.10.24/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.10.24/js/dataTables.bootstrap4.min.js"></script>
     <script>
     $(document).ready(function () {
+      // Responsive DataTable Konfiguration
       $('#KatTable').DataTable({
         "paging": false,
         "searching": false,
         "info": false,
-        "order": [[ 1, "asc" ]]
+        "order": [[ 1, "desc" ]],
+        "responsive": true,
+        "language": {
+          "emptyTable": "Keine Daten verfügbar"
+        }
       });
     });
     </script>

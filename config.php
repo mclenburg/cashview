@@ -177,17 +177,12 @@ if(isset($_POST["action"]) && $_POST["action"] == "delete") {
                 </div>
 
                 <div class="form-group">
-                    <label>Farbe (RGB)</label>
-                    <div class="row">
-                        <div class="col">
-                            <input type="number" class="form-control" name="color_r" placeholder="Rot (0-255)" min="0" max="255" value="100" required>
-                        </div>
-                        <div class="col">
-                            <input type="number" class="form-control" name="color_g" placeholder="Grün (0-255)" min="0" max="255" value="100" required>
-                        </div>
-                        <div class="col">
-                            <input type="number" class="form-control" name="color_b" placeholder="Blau (0-255)" min="0" max="255" value="255" required>
-                        </div>
+                    <label for="colorpicker">Farbe</label>
+                    <div class="input-group">
+                        <input type="color" class="form-control" id="colorpicker" value="#6464ff" style="height: 50px;">
+                        <input type="hidden" name="color_r" id="color_r" value="100">
+                        <input type="hidden" name="color_g" id="color_g" value="100">
+                        <input type="hidden" name="color_b" id="color_b" value="255">
                     </div>
                 </div>
 
@@ -218,17 +213,12 @@ if(isset($_POST["action"]) && $_POST["action"] == "delete") {
                 </div>
 
                 <div class="form-group">
-                    <label>Farbe (RGB)</label>
-                    <div class="row">
-                        <div class="col">
-                            <input type="number" class="form-control" name="color_r" id="edit_color_r" placeholder="Rot (0-255)" min="0" max="255" required>
-                        </div>
-                        <div class="col">
-                            <input type="number" class="form-control" name="color_g" id="edit_color_g" placeholder="Grün (0-255)" min="0" max="255" required>
-                        </div>
-                        <div class="col">
-                            <input type="number" class="form-control" name="color_b" id="edit_color_b" placeholder="Blau (0-255)" min="0" max="255" required>
-                        </div>
+                    <label for="edit_colorpicker">Farbe</label>
+                    <div class="input-group">
+                        <input type="color" class="form-control" id="edit_colorpicker" style="height: 50px;">
+                        <input type="hidden" name="color_r" id="edit_color_r">
+                        <input type="hidden" name="color_g" id="edit_color_g">
+                        <input type="hidden" name="color_b" id="edit_color_b">
                     </div>
                 </div>
 
@@ -244,6 +234,30 @@ if(isset($_POST["action"]) && $_POST["action"] == "delete") {
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
 
 <script>
+// Colorpicker für "Hinzufügen"-Formular
+document.getElementById('colorpicker').addEventListener('input', function(e) {
+    const hex = e.target.value;
+    const r = parseInt(hex.substr(1,2), 16);
+    const g = parseInt(hex.substr(3,2), 16);
+    const b = parseInt(hex.substr(5,2), 16);
+
+    document.getElementById('color_r').value = r;
+    document.getElementById('color_g').value = g;
+    document.getElementById('color_b').value = b;
+});
+
+// Colorpicker für "Bearbeiten"-Formular
+document.getElementById('edit_colorpicker').addEventListener('input', function(e) {
+    const hex = e.target.value;
+    const r = parseInt(hex.substr(1,2), 16);
+    const g = parseInt(hex.substr(3,2), 16);
+    const b = parseInt(hex.substr(5,2), 16);
+
+    document.getElementById('edit_color_r').value = r;
+    document.getElementById('edit_color_g').value = g;
+    document.getElementById('edit_color_b').value = b;
+});
+
 function editCategory(id, bez, sortorder, r, g, b) {
     document.getElementById('edit_id').value = id;
     document.getElementById('edit_bez').value = bez;
@@ -251,6 +265,14 @@ function editCategory(id, bez, sortorder, r, g, b) {
     document.getElementById('edit_color_r').value = r;
     document.getElementById('edit_color_g').value = g;
     document.getElementById('edit_color_b').value = b;
+
+    // Hex-Wert für Colorpicker berechnen
+    const hex = '#' +
+        ('0' + r.toString(16)).slice(-2) +
+        ('0' + g.toString(16)).slice(-2) +
+        ('0' + b.toString(16)).slice(-2);
+    document.getElementById('edit_colorpicker').value = hex;
+
     document.getElementById('editCard').style.display = 'block';
     document.getElementById('editCard').scrollIntoView({ behavior: 'smooth' });
 }
