@@ -461,6 +461,25 @@
   	       $name = gethostbyaddr($_SERVER['REMOTE_ADDR']);
   		   ($GLOBALS["___mysqli_ston"] = mysqli_connect("192.168.5.103",  "cashview",  "cash123", "cashview"))  or die("ERROR connecting to database.");
 
+           // Verfügbares Guthaben berechnen (identisch zu index.php)
+           $query = "select Betrag, KtoID from Initialwerte inner join Konten on Konten.id = KtoID where Konten.manId = $mandant";
+           $result = mysqli_query($GLOBALS["___mysqli_ston"], $query) or die("$query " .mysqli_error($GLOBALS["___mysqli_ston"]));
+           $plus_kum = 0;
+
+           while($init_wert = mysqli_fetch_assoc($result)) {
+               $stand = $init_wert["Betrag"];
+               $query_trans = "select Wert from transaktionen where KtoID = " .$init_wert["KtoID"] . " and manId = $mandant";
+               $result_inner = mysqli_query($GLOBALS["___mysqli_ston"], $query_trans) OR die("Error: $query_trans " .mysqli_error($GLOBALS["___mysqli_ston"]));
+
+               while($trans_row = mysqli_fetch_assoc($result_inner)) {
+                   $stand = ($stand - $trans_row["Wert"]);
+               }
+
+               if($stand > 0) {
+                   $plus_kum += $stand;
+               }
+           }
+
   		   $resultRest = mysqli_query($GLOBALS["___mysqli_ston"], "select sum(wert) wert from transaktionen where date(Datum) <= date(DATE_SUB(CURRENT_DATE(),INTERVAL 30 DAY)) and manId = $mandant")or die("queryRest " .mysqli_error($GLOBALS["___mysqli_ston"]));
   		   $rest = mysqli_fetch_assoc($resultRest)["wert"];
   		   $resultInit = mysqli_query($GLOBALS["___mysqli_ston"], "select sum(Betrag) wert from Initialwerte inner join Konten on Initialwerte.KtoId = Konten.id where Konten.manId = $mandant")or die("queryIni " .mysqli_error($GLOBALS["___mysqli_ston"]));
@@ -573,7 +592,7 @@
             </div>
             <div class="card-body">
               <div class="daily-amount">
-                <?php echo(number_format(round($rest/$resttage,2), 2, ',', '.') ." €"); ?>
+                <?php echo(number_format(round($plus_kum/$resttage,2), 2, ',', '.') ." €"); ?>
               </div>
             </div>
           </div>
@@ -694,6 +713,51 @@
                     <?php
                        while( $row = mysqli_fetch_assoc( $sumPerKat30)){
                           echo("<tr><td>".$row["kategorie"]."</td><td>".number_format($row["wert"], 2, ',', '.')." €</td></tr>");
+                       }
+                    ?>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- Letzte 3 Transaktionen -->
+          <div class="card">
+            <div class="card-header">
+              <h5 class="card-title">Letzte Transaktionen</h5>
+            </div>
+            <div class="card-body">
+              <div class="table-responsive">
+                <table class="table table-striped">
+                  <thead>
+                    <tr>
+                      <th>Datum</th>
+                      <th>Betrag</th>
+                      <th>Kategorie</th>
+                      <th>Konto</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <?php
+                       $queryLastTrans = "SELECT t.Wert, t.Datum, k.bez as Kategorie, ko.Bez as Konto
+                                          FROM transaktionen t
+                                          LEFT JOIN kategorien k ON t.katID = k.ID
+                                          LEFT JOIN Konten ko ON t.KtoID = ko.id
+                                          WHERE t.manId = $mandant
+                                          ORDER BY t.Datum DESC
+                                          LIMIT 3";
+                       $resultLastTrans = mysqli_query($GLOBALS["___mysqli_ston"], $queryLastTrans);
+
+                       while($row = mysqli_fetch_assoc($resultLastTrans)) {
+                           $datum = date('d.m.Y H:i', strtotime($row["Datum"]));
+                           $betrag = number_format($row["Wert"], 2, ',', '.');
+
+                           echo("<tr>");
+                           echo("<td>".$datum."</td>");
+                           echo("<td>".$betrag." €</td>");
+                           echo("<td>".($row["Kategorie"] ? $row["Kategorie"] : '-')."</td>");
+                           echo("<td>".($row["Konto"] ? $row["Konto"] : '-')."</td>");
+                           echo("</tr>");
                        }
                     ?>
                   </tbody>
