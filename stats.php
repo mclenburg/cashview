@@ -797,17 +797,23 @@
     const textColor = isDarkMode ? '#ffffff' : '#666';
     const gridColor = isDarkMode ? '#444' : '#e0e0e0';
 
-    // PHP Daten für JavaScript
-    const data30 = <?php echo json_encode($array30); ?>;
+    // PHP Daten für JavaScript (als Zahlen parsen!)
+    const data30 = <?php echo json_encode(array_map('floatval', $array30)); ?>;
     const labels30 = <?php echo json_encode($array30_labels); ?>;
     const colors30 = <?php echo json_encode($array30_colors); ?>;
 
-    const dataAll = <?php echo json_encode($arrayAll); ?>;
+    const dataAll = <?php echo json_encode(array_map('floatval', $arrayAll)); ?>;
     const labelsAll = <?php echo json_encode($arrayAll_labels); ?>;
     const colorsAll = <?php echo json_encode($arrayAll_colors); ?>;
 
     const lineLabels = <?php echo json_encode($arrayLine_dates); ?>;
-    const lineData = <?php echo json_encode($guthabenVerlauf); ?>;
+    const lineData = <?php echo json_encode(array_map('floatval', $guthabenVerlauf)); ?>;
+
+    // Debug: Daten in Konsole ausgeben
+    console.log('30 Tage Daten:', data30);
+    console.log('30 Tage Summe:', data30.reduce((a, b) => a + b, 0));
+    console.log('Gesamt Daten:', dataAll);
+    console.log('Gesamt Summe:', dataAll.reduce((a, b) => a + b, 0));
 
     // Funktion zum Berechnen der Prozentangaben für Legende
     function generateLegendLabels(chart) {
@@ -848,10 +854,15 @@
                         },
                         generateLabels: function(chart) {
                             const data = chart.data;
-                            const total = data.datasets[0].data.reduce((a, b) => a + b, 0);
+                            if (!data.datasets[0] || !data.datasets[0].data) return [];
+
+                            const dataset = data.datasets[0].data;
+                            const total = dataset.reduce((sum, value) => sum + parseFloat(value), 0);
+
+                            if (total === 0) return [];
 
                             return data.labels.map((label, index) => {
-                                const value = data.datasets[0].data[index];
+                                const value = parseFloat(dataset[index]);
                                 const percentage = ((value / total) * 100).toFixed(1);
 
                                 return {
@@ -868,9 +879,9 @@
                     callbacks: {
                         label: function(context) {
                             let label = context.label || '';
-                            let value = context.parsed || 0;
-                            let total = context.dataset.data.reduce((a, b) => a + b, 0);
-                            let percentage = ((value / total) * 100).toFixed(1);
+                            let value = parseFloat(context.parsed) || 0;
+                            let total = context.dataset.data.reduce((sum, val) => sum + parseFloat(val), 0);
+                            let percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
                             return label + ': ' + value.toFixed(2) + ' € (' + percentage + '%)';
                         }
                     }
@@ -910,10 +921,15 @@
                         },
                         generateLabels: function(chart) {
                             const data = chart.data;
-                            const total = data.datasets[0].data.reduce((a, b) => a + b, 0);
+                            if (!data.datasets[0] || !data.datasets[0].data) return [];
+
+                            const dataset = data.datasets[0].data;
+                            const total = dataset.reduce((sum, value) => sum + parseFloat(value), 0);
+
+                            if (total === 0) return [];
 
                             return data.labels.map((label, index) => {
-                                const value = data.datasets[0].data[index];
+                                const value = parseFloat(dataset[index]);
                                 const percentage = ((value / total) * 100).toFixed(1);
 
                                 return {
@@ -930,9 +946,9 @@
                     callbacks: {
                         label: function(context) {
                             let label = context.label || '';
-                            let value = context.parsed || 0;
-                            let total = context.dataset.data.reduce((a, b) => a + b, 0);
-                            let percentage = ((value / total) * 100).toFixed(1);
+                            let value = parseFloat(context.parsed) || 0;
+                            let total = context.dataset.data.reduce((sum, val) => sum + parseFloat(val), 0);
+                            let percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
                             return label + ': ' + value.toFixed(2) + ' € (' + percentage + '%)';
                         }
                     }
