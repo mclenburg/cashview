@@ -21,7 +21,7 @@
             padding-right: 10px;
         }
 
-        /* Navigation optimiert für Mobile */
+        /* Navigation */
         .navbar {
             padding: 0.5rem 1rem;
             flex-wrap: wrap;
@@ -37,7 +37,7 @@
             padding: 0.4rem 0.8rem;
         }
 
-        /* Cards für Mobile */
+        /* Cards */
         .card {
             margin-bottom: 1rem;
             border-radius: 8px;
@@ -58,7 +58,7 @@
             padding: 1rem;
         }
 
-        /* Verfügbar pro Tag - Extra prominent */
+        /* Verfügbar pro Tag */
         .daily-amount {
             font-size: 2rem;
             font-weight: bold;
@@ -67,18 +67,16 @@
             padding: 1.5rem 0;
         }
 
-        /* Diagramme responsive */
+        /* Chart Container */
         .chart-container {
+            position: relative;
             width: 100%;
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
+            height: 300px;
+            margin: 0 auto;
         }
 
-        .chart-container img {
-            max-width: 100%;
-            height: auto;
-            display: block;
-            margin: 0 auto;
+        .chart-container-large {
+            height: 350px;
         }
 
         /* Tabelle responsive */
@@ -97,7 +95,7 @@
             z-index: 10;
         }
 
-        /* DataTables Mobile Optimierung */
+        /* DataTables Mobile */
         .dataTables_wrapper .dataTables_length,
         .dataTables_wrapper .dataTables_filter,
         .dataTables_wrapper .dataTables_info,
@@ -105,7 +103,7 @@
             font-size: 0.85rem;
         }
 
-        /* iPhone 13 (390x844) */
+        /* iPhone 13 */
         @media only screen and (min-width: 390px) and (max-width: 428px) {
             .container {
                 max-width: 100%;
@@ -113,17 +111,16 @@
                 padding-right: 12px;
             }
 
-            .chart-container img {
-                width: 100%;
-                max-width: 370px;
-            }
-
             .daily-amount {
                 font-size: 2.2rem;
             }
+
+            .chart-container {
+                height: 280px;
+            }
         }
 
-        /* iPad 10 (820x1180) */
+        /* iPad 10 */
         @media only screen and (min-width: 768px) and (max-width: 1024px) {
             body {
                 font-size: 16px;
@@ -144,16 +141,6 @@
                 padding: 2rem 0;
             }
 
-            .chart-container {
-                display: flex;
-                justify-content: center;
-            }
-
-            .chart-container img {
-                max-width: 500px;
-            }
-
-            /* Zwei Spalten Layout für Diagramme */
             .chart-grid {
                 display: grid;
                 grid-template-columns: 1fr 1fr;
@@ -164,12 +151,16 @@
                 margin-bottom: 0;
             }
 
+            .chart-container {
+                height: 320px;
+            }
+
             #KatTable {
                 font-size: 1rem;
             }
         }
 
-        /* Desktop (1920x1080 und größer) */
+        /* Desktop */
         @media only screen and (min-width: 1025px) {
             body {
                 font-size: 16px;
@@ -199,11 +190,6 @@
                 padding: 2.5rem 0;
             }
 
-            .chart-container img {
-                max-width: 600px;
-            }
-
-            /* Drei Spalten Layout für kleinere Charts */
             .chart-grid {
                 display: grid;
                 grid-template-columns: 1fr 1fr;
@@ -215,9 +201,16 @@
                 margin-bottom: 0;
             }
 
-            /* Volle Breite für Liniendiagramm */
             .chart-full {
                 grid-column: 1 / -1;
+            }
+
+            .chart-container {
+                height: 350px;
+            }
+
+            .chart-container-large {
+                height: 400px;
             }
 
             #KatTable {
@@ -229,15 +222,15 @@
             }
         }
 
-        /* Landscape Modus für Mobilgeräte */
+        /* Landscape Mobile */
         @media only screen and (max-width: 926px) and (orientation: landscape) {
-            .chart-container img {
-                max-width: 450px;
-            }
-
             .daily-amount {
                 font-size: 1.8rem;
                 padding: 1rem 0;
+            }
+
+            .chart-container {
+                height: 250px;
             }
         }
 
@@ -253,7 +246,7 @@
             }
         }
 
-        /* Dark Mode Support */
+        /* Dark Mode */
         @media (prefers-color-scheme: dark) {
             body {
                 background-color: #121212;
@@ -297,24 +290,6 @@
                 background-color: rgba(255, 255, 255, 0.05);
             }
 
-            .trend-amount {
-                color: #aaaaaa;
-            }
-
-            .trend-summary {
-                background-color: #2a2a2a;
-                color: #ffffff;
-            }
-
-            .trend-summary h6 {
-                color: #ffffff;
-            }
-
-            .trend-bar-container {
-                background: #2a2a2a;
-            }
-
-            /* DataTables im Dark Mode */
             .dataTables_wrapper {
                 color: #ffffff;
             }
@@ -324,22 +299,6 @@
             .dataTables_wrapper .dataTables_info,
             .dataTables_wrapper .dataTables_paginate {
                 color: #ffffff;
-            }
-
-            /* Trend Indikatoren - bessere Lesbarkeit */
-            .trend-up {
-                color: #ff6b6b;
-                background: #4a2020;
-            }
-
-            .trend-down {
-                color: #51cf66;
-                background: #1a4d2e;
-            }
-
-            .trend-neutral {
-                color: #ffd43b;
-                background: #4a3d00;
             }
         }
 
@@ -440,6 +399,40 @@
                 font-size: 1rem;
             }
         }
+
+        @media (prefers-color-scheme: dark) {
+            .trend-amount {
+                color: #aaaaaa;
+            }
+
+            .trend-summary {
+                background-color: #2a2a2a;
+                color: #ffffff;
+            }
+
+            .trend-summary h6 {
+                color: #ffffff;
+            }
+
+            .trend-bar-container {
+                background: #2a2a2a;
+            }
+
+            .trend-up {
+                color: #ff6b6b;
+                background: #4a2020;
+            }
+
+            .trend-down {
+                color: #51cf66;
+                background: #1a4d2e;
+            }
+
+            .trend-neutral {
+                color: #ffd43b;
+                background: #4a3d00;
+            }
+        }
     </style>
 </head>
 <body>
@@ -475,7 +468,7 @@
            $rest = $init - $rest;
 
            $queryAll = "select sum(trans.wert) summe, kat.bez, kat.ID, kat.statscolor from transaktionen trans left outer join kategorien kat on trans.katID = kat.ID where wert > 0 and trans.manId = $mandant and (kat.manId = 0 OR kat.manId = $mandant) group by katID order by sortorder";
-  		   $query30 = "select sum(trans.wert) summe, kat.bez from transaktionen trans left outer join kategorien kat on trans.katID = kat.ID where wert > 0 and trans.manId = $mandant and trans.Datum > DATE_SUB(CURRENT_DATE(),INTERVAL 30 DAY) and (kat.manId = 0 OR kat.manId = $mandant) group by katID order by sortorder";
+  		   $query30 = "select sum(trans.wert) summe, kat.bez, kat.statscolor from transaktionen trans left outer join kategorien kat on trans.katID = kat.ID where wert > 0 and trans.manId = $mandant and trans.Datum > DATE_SUB(CURRENT_DATE(),INTERVAL 30 DAY) and (kat.manId = 0 OR kat.manId = $mandant) group by katID order by sortorder";
 
            $resultAll = mysqli_query($GLOBALS["___mysqli_ston"], $queryAll)or die("$queryAll " .mysqli_error($GLOBALS["___mysqli_ston"]));
            $result30 = mysqli_query($GLOBALS["___mysqli_ston"], $query30)or die("$query30 " .mysqli_error($GLOBALS["___mysqli_ston"]));
@@ -483,7 +476,7 @@
            $querySumPerKat30 = "select sum(t.wert) wert, k.bez kategorie from transaktionen t inner join kategorien k on t.katID = k.ID where date(t.Datum) >= date(DATE_SUB(CURRENT_DATE(),INTERVAL 30 DAY)) and k.bez != 'Gehalt' and t.manId = $mandant and (k.manId = 0 OR k.manId = $mandant) group by k.bez order by k.sortorder";
            $sumPerKat30 = mysqli_query($GLOBALS["___mysqli_ston"], $querySumPerKat30)or die("$querySumPerKat30 " .mysqli_error($GLOBALS["___mysqli_ston"]));
 
-           // 30-Tage-Perioden Vergleich (rollierend)
+           // 30-Tage-Perioden Vergleich
            $monthlyComparison = array();
            for($i = 0; $i < 3; $i++) {
                $endDays = $i * 30;
@@ -492,7 +485,6 @@
                $endDate = date('Y-m-d', strtotime("-$endDays days"));
                $startDate = date('Y-m-d', strtotime("-$startDays days"));
 
-               // Label für die Periode
                if($i == 0) {
                    $periodName = "Letzte 30 Tage";
                } else {
@@ -515,175 +507,57 @@
                );
            }
 
-           // Durchschnitt berechnen
            $avgMonthly = array_sum(array_column($monthlyComparison, 'total')) / 3;
-
-           // Trend berechnen (aktuelle 30 Tage vs. Durchschnitt)
            $currentPeriod = $monthlyComparison[0]['total'];
            $trendPercent = $avgMonthly > 0 ? (($currentPeriod - $avgMonthly) / $avgMonthly * 100) : 0;
 
-           $breite = 350;
-           $hoehe = 250;
-           $radius = 200;
-           $start_x = ($breite/3)*2;
-           $start_y = $hoehe/2;
-
-           $rand_oben = 20;
-           $rand_links = 20;
-           $punktbreite = 10;
-           $abstand = 10;
-           $schriftgroesse = 10;
-
-           $diagrammAll = imagecreatetruecolor($breite, $hoehe);
-           $diagramm30 = imagecreatetruecolor($breite, $hoehe);
-           $diagrammLine = imagecreatetruecolor($breite, $hoehe+30);
-
-           $schwarz = imagecolorallocate($diagrammAll, 0, 0, 0);
-           $weiss = imagecolorallocate($diagrammAll, 255, 255, 255);
-           $schwarz30 = imagecolorallocate($diagramm30, 0, 0, 0);
-           $weiss30 = imagecolorallocate($diagramm30, 255, 255, 255);
-           $yellow = imagecolorallocate($diagrammLine, 255, 250, 140);
-           $lightyellow = imagecolorallocate($diagrammLine, 255, 246, 143);
-
+           // Daten für Chart.js sammeln
            $arrayAll = array();
-           $colorMap = array();
+           $arrayAll_labels = array();
+           $arrayAll_colors = array();
            while( $row = mysqli_fetch_assoc( $resultAll)){
-               $arrayAll[$row["bez"]] = $row["summe"];
-               $color=explode(",", $row["statscolor"]);
-               $colorMap[$row["bez"]] = imagecolorallocate($diagrammAll, $color[0], $color[1], $color[2]);
+               $arrayAll[] = $row["summe"];
+               $arrayAll_labels[] = $row["bez"];
+               $color = explode(",", $row["statscolor"]);
+               $arrayAll_colors[] = "rgba(".$color[0].",".$color[1].",".$color[2].", 0.8)";
            }
 
            $array30 = array();
+           $array30_labels = array();
+           $array30_colors = array();
            while( $row = mysqli_fetch_assoc( $result30)){
-               $array30[$row["bez"]] = $row["summe"];
+               $array30[] = $row["summe"];
+               $array30_labels[] = $row["bez"];
+               $color = explode(",", $row["statscolor"]);
+               $array30_colors[] = "rgba(".$color[0].",".$color[1].",".$color[2].", 0.8)";
            }
 
+           // Verlaufsdiagramm Daten
            $queryLine = "select sum(trans.wert) summe, DATE(trans.Datum) datum from transaktionen trans WHERE date(trans.Datum) > date(DATE_SUB(CURRENT_DATE(),INTERVAL 30 DAY)) and manId = $mandant group by DATE(Datum) ORDER BY Datum";
            $resultLine = mysqli_query($GLOBALS["___mysqli_ston"], $queryLine)or die("$queryLine " .mysqli_error($GLOBALS["___mysqli_ston"]));
+
+           $arrayLine_dates = array();
+           $arrayLine_values = array();
            $arrayLine = array();
            while( $row = mysqli_fetch_assoc( $resultLine)){
              $arrayLine[$row["datum"]] = $row["summe"];
            }
-           $jetzt = $datum = date("d.m.Y");
 
-           imagefill($diagrammAll, 0, 0, $weiss);
-           imagefill($diagramm30, 0, 0, $weiss);
-           imagefill($diagrammLine, 0, 0, $weiss);
-
-           $gesamtAll = array_sum($arrayAll);
-           $gesamt30 = array_sum($array30);
-
-           $i = 0;
-           $winkel = 0;
-           foreach($arrayAll as $key => $value)
-           {
-             $i++;
-             $start = round($winkel);
-             $winkel = $start + round($value*360/$gesamtAll);
-
-             $color = $colorMap[$key];
-             imagesetthickness ( $diagrammAll , 3 );
-             for($rad = 0; $rad <= 50; $rad++) {
-               imagearc($diagrammAll, round($start_x), round($start_y), round($radius-$rad), round($radius-$rad), $start, $winkel, $color);
-             }
-             $unterkante = $rand_oben+$punktbreite+($i-1)*($punktbreite+$abstand);
-             imagefilledrectangle($diagrammAll, $rand_links, $rand_oben+($i-1)*($punktbreite+$abstand), $rand_links+$punktbreite, $unterkante, $color);
-             imagettftext($diagrammAll, $schriftgroesse, 0, $rand_links+$punktbreite+5, $unterkante-$punktbreite/2+$schriftgroesse/2, $schwarz, "media/NotoSans-Regular.ttf", $key." ".round($value*100/$gesamtAll, 1)." %");
-           }
-
-           $i = 0;
-           $winkel = 0;
-           foreach($array30 as $key => $value)
-           {
-             $i++;
-             $start = $winkel;
-             $winkel = $start + round($value*360/$gesamt30);
-
-             $color = $colorMap[$key];
-             imagesetthickness ( $diagramm30 , 3 );
-             for($rad = 0; $rad <= 50; $rad++) {
-               imagearc($diagramm30, round($start_x), round($start_y), round($radius-$rad), round($radius-$rad), $start, $winkel, $color);
-             }
-             $unterkante = $rand_oben+$punktbreite+($i-1)*($punktbreite+$abstand);
-             imagefilledrectangle($diagramm30, $rand_links, $rand_oben+($i-1)*($punktbreite+$abstand), $rand_links+$punktbreite, $unterkante, $color);
-             imagettftext($diagramm30, $schriftgroesse, 0, $rand_links+$punktbreite+5, $unterkante-$punktbreite/2+$schriftgroesse/2, $schwarz, "media/NotoSans-Regular.ttf", $key." ".round($value*100/$gesamt30, 1)." %");
-           }
-
-           $maxGuthaben = $rest;
-           $minGuthaben = $rest;
+           // Guthaben-Verlauf berechnen
+           $guthabenVerlauf = array();
            $tempGuthaben = $rest;
-           foreach($arrayLine as $key => $value) {
-               $tempGuthaben += (0-$value);
-               if($tempGuthaben > $maxGuthaben) $maxGuthaben = $tempGuthaben;
-               if($tempGuthaben < $minGuthaben) $minGuthaben = $tempGuthaben;
-           }
-
-           $xperday = round($breite-($rand_links+40))/30;
-           $ypereuro = round($hoehe-$rand_oben)/($maxGuthaben-$minGuthaben);
-           $posxachse = round($hoehe-$rand_oben-$ypereuro*(0-$minGuthaben));
-           if($posxachse > $hoehe-$rand_oben) $posxachse= ($hoehe-$rand_oben);
-
-           imageline($diagrammLine, ($rand_links+40), 0, ($rand_links+40), ($hoehe-$rand_oben+3), $schwarz);
-           imageline($diagrammLine, round($rand_links+37), round($posxachse), $breite, round($posxachse), $schwarz);
-           if($minGuthaben > 0) {
-             imagettftext($diagrammLine, $schriftgroesse, 0, $rand_links+5, round($posxachse) , $schwarz, "media/NotoSans-Regular.ttf", round($minGuthaben,-1));
-           }
-           else {
-             imagettftext($diagrammLine, $schriftgroesse, 0, $rand_links+5, round($posxachse) , $schwarz, "media/NotoSans-Regular.ttf", 0);
-           }
-
-           imagettftext($diagrammLine, $schriftgroesse, 90, $rand_links, $hoehe/2+$schriftgroesse/2, $schwarz, "media/NotoSans-Regular.ttf", "Guthaben");
-           $i = 0;
-           $lichtgrau = imagecolorallocate($diagrammLine, 200, 200, 200);
-           $stepsize = 50;
-           for($wert = $minGuthaben; $wert <= $maxGuthaben; $wert+=$stepsize) {
-             if($wert <-10 || $wert > 10) {
-               imagettftext($diagrammLine, $schriftgroesse, 0, $rand_links+5, round($hoehe-$rand_oben - ($ypereuro*$i*$stepsize)) , $schwarz, "media/NotoSans-Regular.ttf", round($wert,-1));
-               if($i>0) {
-                 imageline($diagrammLine, round($rand_links+37), round($hoehe-$rand_oben-($ypereuro*$i*$stepsize)), $breite, round($hoehe-$rand_oben-($ypereuro*$i*$stepsize)), $lichtgrau);
-               }
-             }
-             $i++;
-           }
 
            for($dat=30; $dat>=0; $dat--) {
-             $date = new DateTime("-".$dat." days");
-             if($dat%5==0) {
-               imagettftext($diagrammLine, 8, 70, round($rand_links+40+$xperday*(30-$dat)-8), ($hoehe+10) , $schwarz, "media/NotoSans-Regular.ttf", str_pad($date->format("d.m."), strlen($maxGuthaben), " ", STR_PAD_LEFT));
-               imageline($diagrammLine, round($rand_links+40+$xperday*(30-$dat)), $posxachse, round($rand_links+40+$xperday*(30-$dat)), $posxachse+2, $schwarz);
-             }
-             if($date->format("D") == "Sat") {
-               imagesetthickness ( $diagrammLine , round($xperday) );
-               imageline($diagrammLine, round($rand_links+40+$xperday*(30-$dat)), $posxachse-1, round($rand_links+40+$xperday*(30-$dat)), 0, $lightyellow);
-             }
-             if($date->format("D") == "Sun") {
-               imagesetthickness ( $diagrammLine , round($xperday) );
-               imageline($diagrammLine, round($rand_links+40+$xperday*(30-$dat)), $posxachse-1, round($rand_links+40+$xperday*(30-$dat)), 0, $yellow);
-             }
-             imagesetthickness ($diagrammLine , 1 );
-           }
+               $date = new DateTime("-".$dat." days");
+               $dateStr = $date->format("Y-m-d");
+               $dateLabel = $date->format("d.m.");
 
-           if($minGuthaben<0) {
-             $minGuthaben=0;
-           }
-           $posy_alt = round($posxachse-($ypereuro*$rest)+($ypereuro*$minGuthaben));
-           $dat_alt = 30;
-           for($dat=29; $dat>=0; $dat--) {
-               $found = false;
-               foreach($arrayLine as $key => $value) {
-                 $date = new DateTime("-".$dat." days");
-                 if(strtotime($key) == strtotime($date->format("Y-m-d"))) {
-                     $rest -= $value;
-                     imageline($diagrammLine, round(($rand_links+40)+$xperday*(30-$dat_alt)), round($posy_alt), round(($rand_links+40)+$xperday*(30-$dat)), round($posxachse-($ypereuro*$rest)+($ypereuro*$minGuthaben)), $schwarz);
-                     $posy_alt = $posxachse-($ypereuro*$rest) + ($ypereuro*$minGuthaben);
-                     $dat_alt = $dat;
-                     $found = true;
-                 }
+               if(isset($arrayLine[$dateStr])) {
+                   $tempGuthaben -= $arrayLine[$dateStr];
                }
-               if(!$found) {
-                 imageline($diagrammLine, round(($rand_links+40)+$xperday*(30-$dat_alt)), round($posy_alt), round(($rand_links+40)+$xperday*(30-$dat)), round($posy_alt), $schwarz);
-                 $dat_alt = $dat;
-               }
+
+               $arrayLine_dates[] = $dateLabel;
+               $guthabenVerlauf[] = round($tempGuthaben, 2);
            }
   ?>
   <div class="container">
@@ -692,7 +566,7 @@
             <a class="btn btn-secondary btn-back" href="index.php?manId=<?php echo $mandant; ?>" role="button">Zurück</a>
   	      </nav>
 
-          <!-- Verfügbar pro Tag - Prominent platziert -->
+          <!-- Verfügbar pro Tag -->
           <div class="card">
             <div class="card-header">
               <h5 class="card-title">Verfügbar pro Tag</h5>
@@ -704,26 +578,16 @@
             </div>
           </div>
 
-          <!-- 30-Tage-Perioden Vergleich / Trendanalyse -->
+          <!-- Trendanalyse -->
           <div class="card">
             <div class="card-header">
               <h5 class="card-title">📈 Ausgaben-Trend (3x 30-Tage-Perioden)</h5>
             </div>
             <div class="card-body">
-              <?php
-                // Debug-Ausgabe im HTML-Kommentar
-                echo('<!-- Debug Info:');
-                echo(' Mandant: ' . $mandant);
-                foreach($monthlyComparison as $m) {
-                  echo(' | ' . $m['period'] . ': ' . $m['total'] . '€ (' . $m['startDate'] . ' bis ' . $m['endDate'] . ')');
-                }
-                echo(' -->');
-              ?>
               <div class="trend-container">
                 <?php
-                  // Maximalen Wert für Balkenbreite finden
                   $maxValue = max(array_column($monthlyComparison, 'total'));
-                  if($maxValue == 0) $maxValue = 1; // Verhindere Division durch 0
+                  if($maxValue == 0) $maxValue = 1;
 
                   foreach($monthlyComparison as $index => $period) {
                     $barWidth = ($period['total'] / $maxValue * 100);
@@ -759,7 +623,6 @@
                       }
                       echo('</div>');
 
-                      // Textliche Interpretation
                       if(abs($trendPercent) < 5) {
                         echo('<p style="margin-top: 1rem; color: #666; font-size: 0.9rem;">Deine Ausgaben sind stabil.</p>');
                       } elseif($trendPercent > 0) {
@@ -774,7 +637,7 @@
             </div>
           </div>
 
-          <!-- Chart Grid für Tablet und Desktop -->
+          <!-- Chart Grid -->
           <div class="chart-grid">
             <!-- Letzte 30 Tage -->
             <div class="card">
@@ -783,12 +646,7 @@
               </div>
               <div class="card-body">
                 <div class="chart-container">
-                  <?php
-                     ob_start();
-                     imagepng($diagramm30);
-                     $imagedata = ob_get_clean();
-                     echo("<img src=\"data:image/png;base64,".base64_encode($imagedata)."\" alt=\"Diagramm 30 Tage\">");
-                  ?>
+                  <canvas id="chart30Days"></canvas>
                 </div>
               </div>
             </div>
@@ -800,29 +658,19 @@
               </div>
               <div class="card-body">
                 <div class="chart-container">
-                  <?php
-                     ob_start();
-                     imagepng($diagrammAll);
-                     $imagedata = ob_get_clean();
-                     echo("<img src=\"data:image/png;base64,".base64_encode($imagedata)."\" alt=\"Diagramm Gesamt\">");
-                  ?>
+                  <canvas id="chartAll"></canvas>
                 </div>
               </div>
             </div>
 
-            <!-- Verlauf - Volle Breite auf Desktop -->
+            <!-- Verlauf -->
             <div class="card chart-full">
               <div class="card-header">
-                <h5 class="card-title">Verlauf (30 Tage)</h5>
+                <h5 class="card-title">Guthaben-Verlauf (30 Tage)</h5>
               </div>
               <div class="card-body">
-                <div class="chart-container">
-                  <?php
-                     ob_start();
-                     imagepng($diagrammLine);
-                     $imagedata = ob_get_clean();
-                     echo("<img src=\"data:image/png;base64,".base64_encode($imagedata)."\" alt=\"Verlaufsdiagramm\">");
-                  ?>
+                <div class="chart-container chart-container-large">
+                  <canvas id="chartLine"></canvas>
                 </div>
               </div>
             </div>
@@ -858,9 +706,11 @@
     <script src="https://code.jquery.com/jquery-3.5.1.js"></script>
     <script src="https://cdn.datatables.net/1.10.24/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.10.24/js/dataTables.bootstrap4.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+
     <script>
+    // DataTable
     $(document).ready(function () {
-      // Responsive DataTable Konfiguration
       $('#KatTable').DataTable({
         "paging": false,
         "searching": false,
@@ -872,6 +722,227 @@
         }
       });
     });
+
+    // Chart.js Konfiguration
+    Chart.defaults.font.family = "'Segoe UI', 'Helvetica Neue', Arial, sans-serif";
+    Chart.defaults.plugins.legend.display = true;
+    Chart.defaults.plugins.legend.position = 'bottom';
+
+    // Dark Mode Detection
+    const isDarkMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const textColor = isDarkMode ? '#ffffff' : '#666';
+    const gridColor = isDarkMode ? '#444' : '#e0e0e0';
+
+    // PHP Daten für JavaScript
+    const data30 = <?php echo json_encode($array30); ?>;
+    const labels30 = <?php echo json_encode($array30_labels); ?>;
+    const colors30 = <?php echo json_encode($array30_colors); ?>;
+
+    const dataAll = <?php echo json_encode($arrayAll); ?>;
+    const labelsAll = <?php echo json_encode($arrayAll_labels); ?>;
+    const colorsAll = <?php echo json_encode($arrayAll_colors); ?>;
+
+    const lineLabels = <?php echo json_encode($arrayLine_dates); ?>;
+    const lineData = <?php echo json_encode($guthabenVerlauf); ?>;
+
+    // Chart 1: Letzte 30 Tage (Doughnut)
+    const ctx30 = document.getElementById('chart30Days').getContext('2d');
+    new Chart(ctx30, {
+        type: 'doughnut',
+        data: {
+            labels: labels30,
+            datasets: [{
+                data: data30,
+                backgroundColor: colors30,
+                borderWidth: 2,
+                borderColor: isDarkMode ? '#1e1e1e' : '#ffffff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        color: textColor,
+                        padding: 15,
+                        font: {
+                            size: 11
+                        }
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.label || '';
+                            let value = context.parsed || 0;
+                            let total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            let percentage = ((value / total) * 100).toFixed(1);
+                            return label + ': ' + value.toFixed(2) + ' € (' + percentage + '%)';
+                        }
+                    }
+                }
+            },
+            animation: {
+                animateRotate: true,
+                animateScale: true
+            }
+        }
+    });
+
+    // Chart 2: Gesamt (Doughnut)
+    const ctxAll = document.getElementById('chartAll').getContext('2d');
+    new Chart(ctxAll, {
+        type: 'doughnut',
+        data: {
+            labels: labelsAll,
+            datasets: [{
+                data: dataAll,
+                backgroundColor: colorsAll,
+                borderWidth: 2,
+                borderColor: isDarkMode ? '#1e1e1e' : '#ffffff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        color: textColor,
+                        padding: 15,
+                        font: {
+                            size: 11
+                        }
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.label || '';
+                            let value = context.parsed || 0;
+                            let total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            let percentage = ((value / total) * 100).toFixed(1);
+                            return label + ': ' + value.toFixed(2) + ' € (' + percentage + '%)';
+                        }
+                    }
+                }
+            },
+            animation: {
+                animateRotate: true,
+                animateScale: true
+            }
+        }
+    });
+
+    // Chart 3: Guthaben-Verlauf (Line)
+    const ctxLine = document.getElementById('chartLine').getContext('2d');
+
+    // Gradient für Line Chart
+    const gradient = ctxLine.createLinearGradient(0, 0, 0, 400);
+    gradient.addColorStop(0, 'rgba(40, 167, 69, 0.5)');
+    gradient.addColorStop(1, 'rgba(40, 167, 69, 0.05)');
+
+    new Chart(ctxLine, {
+        type: 'line',
+        data: {
+            labels: lineLabels,
+            datasets: [{
+                label: 'Guthaben in €',
+                data: lineData,
+                borderColor: 'rgb(40, 167, 69)',
+                backgroundColor: gradient,
+                borderWidth: 3,
+                fill: true,
+                tension: 0.4,
+                pointRadius: 4,
+                pointHoverRadius: 6,
+                pointBackgroundColor: 'rgb(40, 167, 69)',
+                pointBorderColor: '#fff',
+                pointBorderWidth: 2,
+                pointHoverBackgroundColor: '#fff',
+                pointHoverBorderColor: 'rgb(40, 167, 69)',
+                pointHoverBorderWidth: 3
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                mode: 'index',
+                intersect: false
+            },
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top',
+                    labels: {
+                        color: textColor,
+                        padding: 15
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    padding: 12,
+                    titleColor: '#fff',
+                    bodyColor: '#fff',
+                    borderColor: 'rgb(40, 167, 69)',
+                    borderWidth: 1,
+                    displayColors: false,
+                    callbacks: {
+                        label: function(context) {
+                            return 'Guthaben: ' + context.parsed.y.toFixed(2) + ' €';
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    display: true,
+                    grid: {
+                        display: true,
+                        color: gridColor,
+                        drawBorder: false
+                    },
+                    ticks: {
+                        color: textColor,
+                        maxRotation: 45,
+                        minRotation: 45,
+                        font: {
+                            size: 10
+                        }
+                    }
+                },
+                y: {
+                    display: true,
+                    grid: {
+                        display: true,
+                        color: gridColor,
+                        drawBorder: false
+                    },
+                    ticks: {
+                        color: textColor,
+                        callback: function(value) {
+                            return value.toFixed(0) + ' €';
+                        }
+                    }
+                }
+            },
+            animation: {
+                duration: 1500,
+                easing: 'easeInOutQuart'
+            }
+        }
+    });
+
+    // Dark Mode Watcher für dynamische Anpassung
+    if (window.matchMedia) {
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+            location.reload(); // Reload bei Theme-Wechsel
+        });
+    }
     </script>
 </body>
 </html>
