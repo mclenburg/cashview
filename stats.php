@@ -367,64 +367,6 @@
             background: #fff8e1;
         }
 
-        .category-comparison {
-            margin-top: 1rem;
-        }
-
-        .category-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0.75rem;
-            margin-bottom: 0.5rem;
-            background: #f8f9fa;
-            border-radius: 6px;
-            border-left: 4px solid #667eea;
-        }
-
-        .category-name {
-            font-weight: 600;
-            flex: 1;
-        }
-
-        .category-values {
-            display: flex;
-            gap: 1rem;
-            align-items: center;
-            font-size: 0.9rem;
-        }
-
-        .category-change {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.25rem;
-            padding: 0.25rem 0.5rem;
-            border-radius: 4px;
-            font-weight: bold;
-            font-size: 0.85rem;
-        }
-
-        .category-change.positive {
-            background: #ffe6e6;
-            color: #dc3545;
-        }
-
-        .category-change.negative {
-            background: #e6ffe6;
-            color: #28a745;
-        }
-
-        /* Debug Info */
-        .debug-info {
-            background: #fff3cd;
-            border: 1px solid #ffc107;
-            padding: 1rem;
-            border-radius: 6px;
-            margin: 1rem 0;
-            font-size: 0.85rem;
-            font-family: monospace;
-        }
-
         @media only screen and (min-width: 768px) {
             .trend-bar-container {
                 height: 40px;
@@ -503,7 +445,7 @@
 
                $monthlyComparison[] = array(
                    'period' => $periodName,
-                   'total' => $row['total'] ? $row['total'] : 0,
+                   'total' => $row['total'] ? floatval($row['total']) : 0,
                    'startDate' => $startDate,
                    'endDate' => $endDate
                );
@@ -539,17 +481,22 @@
            $yellow = imagecolorallocate($diagrammLine, 255, 250, 140);
            $lightyellow = imagecolorallocate($diagrammLine, 255, 246, 143);
 
+           $arrayAll = array();
+           $colorMap = array();
            while( $row = mysqli_fetch_assoc( $resultAll)){
                $arrayAll[$row["bez"]] = $row["summe"];
                $color=explode(",", $row["statscolor"]);
                $colorMap[$row["bez"]] = imagecolorallocate($diagrammAll, $color[0], $color[1], $color[2]);
            }
+
+           $array30 = array();
            while( $row = mysqli_fetch_assoc( $result30)){
                $array30[$row["bez"]] = $row["summe"];
            }
 
            $queryLine = "select sum(trans.wert) summe, DATE(trans.Datum) datum from transaktionen trans WHERE date(trans.Datum) > date(DATE_SUB(CURRENT_DATE(),INTERVAL 30 DAY)) and manId = $mandant group by DATE(Datum) ORDER BY Datum";
            $resultLine = mysqli_query($GLOBALS["___mysqli_ston"], $queryLine)or die("$queryLine " .mysqli_error($GLOBALS["___mysqli_ston"]));
+           $arrayLine = array();
            while( $row = mysqli_fetch_assoc( $resultLine)){
              $arrayLine[$row["datum"]] = $row["summe"];
            }
@@ -693,26 +640,36 @@
             </div>
           </div>
 
-          <!-- Monatsvergleich / Trendanalyse -->
+          <!-- 30-Tage-Perioden Vergleich / Trendanalyse -->
           <div class="card">
             <div class="card-header">
-              <h5 class="card-title">📈 Ausgaben-Trend (3 Monate)</h5>
+              <h5 class="card-title">📈 Ausgaben-Trend (3x 30-Tage-Perioden)</h5>
             </div>
             <div class="card-body">
+              <?php
+                // Debug-Ausgabe im HTML-Kommentar
+                echo('<!-- Debug Info:');
+                echo(' Mandant: ' . $mandant);
+                foreach($monthlyComparison as $m) {
+                  echo(' | ' . $m['period'] . ': ' . $m['total'] . '€ (' . $m['startDate'] . ' bis ' . $m['endDate'] . ')');
+                }
+                echo(' -->');
+              ?>
               <div class="trend-container">
                 <?php
                   // Maximalen Wert für Balkenbreite finden
                   $maxValue = max(array_column($monthlyComparison, 'total'));
+                  if($maxValue == 0) $maxValue = 1; // Verhindere Division durch 0
 
-                  foreach($monthlyComparison as $index => $month) {
-                    $barWidth = $maxValue > 0 ? ($month['total'] / $maxValue * 100) : 0;
+                  foreach($monthlyComparison as $index => $period) {
+                    $barWidth = ($period['total'] / $maxValue * 100);
                     $isCurrent = $index === 0;
                     $barClass = $isCurrent ? 'current-month' : '';
 
                     echo('<div class="trend-bar-wrapper">');
                     echo('<div class="trend-month">');
-                    echo('<span>' . $month['month'] . ($isCurrent ? ' (aktuell)' : '') . '</span>');
-                    echo('<span class="trend-amount">' . number_format($month['total'], 2, ',', '.') . ' €</span>');
+                    echo('<span>' . $period['period'] . '</span>');
+                    echo('<span class="trend-amount">' . number_format($period['total'], 2, ',', '.') . ' €</span>');
                     echo('</div>');
                     echo('<div class="trend-bar-container">');
                     echo('<div class="trend-bar ' . $barClass . '" style="width: ' . $barWidth . '%"></div>');
@@ -724,7 +681,7 @@
                 <div class="trend-summary">
                   <h6>Trend-Analyse</h6>
                   <div>
-                    <div>Durchschnitt (3 Monate): <strong><?php echo number_format($avgMonthly, 2, ',', '.'); ?> €</strong></div>
+                    <div>Durchschnitt (90 Tage): <strong><?php echo number_format($avgMonthly, 2, ',', '.'); ?> €</strong></div>
                     <?php
                       if(abs($trendPercent) < 5) {
                         echo('<div class="trend-indicator trend-neutral">');
@@ -742,65 +699,13 @@
                       if(abs($trendPercent) < 5) {
                         echo('<p style="margin-top: 1rem; color: #666; font-size: 0.9rem;">Deine Ausgaben sind stabil.</p>');
                       } elseif($trendPercent > 0) {
-                        echo('<p style="margin-top: 1rem; color: #666; font-size: 0.9rem;">Du gibst mehr aus als im Durchschnitt der letzten 3 Monate.</p>');
+                        echo('<p style="margin-top: 1rem; color: #666; font-size: 0.9rem;">Du gibst mehr aus als im Durchschnitt der letzten 90 Tage.</p>');
                       } else {
                         echo('<p style="margin-top: 1rem; color: #666; font-size: 0.9rem;">Gut gemacht! Du gibst weniger aus als im Durchschnitt.</p>');
                       }
                     ?>
                   </div>
                 </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Kategorie-Vergleich: Aktueller vs. Letzter Monat -->
-          <div class="card">
-            <div class="card-header">
-              <h5 class="card-title">📊 Kategorien im Vergleich</h5>
-              <h6 class="card-subtitle mb-2 text-muted">Aktueller Monat vs. Letzter Monat</h6>
-            </div>
-            <div class="card-body">
-              <div class="category-comparison">
-                <?php
-                  while($cat = mysqli_fetch_assoc($resultCatCompare)) {
-                    $current = $cat['current_month'] ? $cat['current_month'] : 0;
-                    $last = $cat['last_month'] ? $cat['last_month'] : 0;
-
-                    // Nur anzeigen wenn mindestens einer der Werte > 0
-                    if($current > 0 || $last > 0) {
-                      $change = 0;
-                      if($last > 0) {
-                        $change = (($current - $last) / $last) * 100;
-                      } elseif($current > 0) {
-                        $change = 100; // Neue Kategorie
-                      }
-
-                      echo('<div class="category-item">');
-                      echo('<div class="category-name">' . $cat['kategorie'] . '</div>');
-                      echo('<div class="category-values">');
-                      echo('<span style="color: #28a745; font-weight: 600;">' . number_format($current, 2, ',', '.') . ' €</span>');
-
-                      if($last > 0) {
-                        echo('<span style="color: #999;">vs.</span>');
-                        echo('<span style="color: #666;">' . number_format($last, 2, ',', '.') . ' €</span>');
-
-                        if(abs($change) >= 1) {
-                          $changeClass = $change > 0 ? 'positive' : 'negative';
-                          $changeSymbol = $change > 0 ? '↑' : '↓';
-                          echo('<span class="category-change ' . $changeClass . '">');
-                          echo($changeSymbol . ' ' . number_format(abs($change), 0) . '%');
-                          echo('</span>');
-                        }
-                      } else {
-                        echo('<span class="category-change positive">🆕 NEU</span>');
-                      }
-
-                      echo('</div>');
-                      echo('</div>');
-                    }
-                  }
-                ?>
-
               </div>
             </div>
           </div>
