@@ -809,9 +809,21 @@
     const lineLabels = <?php echo json_encode($arrayLine_dates); ?>;
     const lineData = <?php echo json_encode($guthabenVerlauf); ?>;
 
+    // Funktion zum Berechnen der Prozentangaben für Legende
+    function generateLegendLabels(chart) {
+        const data = chart.data;
+        const total = data.datasets[0].data.reduce((a, b) => a + b, 0);
+
+        return data.labels.map((label, index) => {
+            const value = data.datasets[0].data[index];
+            const percentage = ((value / total) * 100).toFixed(1);
+            return label + ' (' + percentage + '%)';
+        });
+    }
+
     // Chart 1: Letzte 30 Tage (Doughnut)
     const ctx30 = document.getElementById('chart30Days').getContext('2d');
-    new Chart(ctx30, {
+    const chart30 = new Chart(ctx30, {
         type: 'doughnut',
         data: {
             labels: labels30,
@@ -833,6 +845,22 @@
                         padding: 15,
                         font: {
                             size: 11
+                        },
+                        generateLabels: function(chart) {
+                            const data = chart.data;
+                            const total = data.datasets[0].data.reduce((a, b) => a + b, 0);
+
+                            return data.labels.map((label, index) => {
+                                const value = data.datasets[0].data[index];
+                                const percentage = ((value / total) * 100).toFixed(1);
+
+                                return {
+                                    text: label + ' (' + percentage + '%)',
+                                    fillStyle: data.datasets[0].backgroundColor[index],
+                                    hidden: false,
+                                    index: index
+                                };
+                            });
                         }
                     }
                 },
@@ -857,7 +885,7 @@
 
     // Chart 2: Gesamt (Doughnut)
     const ctxAll = document.getElementById('chartAll').getContext('2d');
-    new Chart(ctxAll, {
+    const chartAll = new Chart(ctxAll, {
         type: 'doughnut',
         data: {
             labels: labelsAll,
@@ -879,6 +907,22 @@
                         padding: 15,
                         font: {
                             size: 11
+                        },
+                        generateLabels: function(chart) {
+                            const data = chart.data;
+                            const total = data.datasets[0].data.reduce((a, b) => a + b, 0);
+
+                            return data.labels.map((label, index) => {
+                                const value = data.datasets[0].data[index];
+                                const percentage = ((value / total) * 100).toFixed(1);
+
+                                return {
+                                    text: label + ' (' + percentage + '%)',
+                                    fillStyle: data.datasets[0].backgroundColor[index],
+                                    hidden: false,
+                                    index: index
+                                };
+                            });
                         }
                     }
                 },
