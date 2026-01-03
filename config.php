@@ -735,12 +735,12 @@ if(isset($_POST["action"]) && $_POST["action"] == "delete_laufend") {
                                 $result = mysqli_query($GLOBALS["___mysqli_ston"], $query);
 
                                 $intervalle = array(
-                                    1 => "Täglich",
-                                    7 => "Wöchentlich",
-                                    14 => "14-tägig",
-                                    30 => "Monatlich",
-                                    90 => "Quartalsweise",
-                                    365 => "Jährlich"
+                                    1 => "Monatlich",
+                                    2 => "Alle 2 Monate",
+                                    3 => "Quartalsweise (alle 3 Monate)",
+                                    4 => "Alle 4 Monate",
+                                    6 => "Halbjährlich (alle 6 Monate)",
+                                    12 => "Jährlich (alle 12 Monate)"
                                 );
 
                                 while($row = mysqli_fetch_assoc($result)) {
@@ -785,15 +785,16 @@ if(isset($_POST["action"]) && $_POST["action"] == "delete_laufend") {
                         </div>
 
                         <div class="form-group">
-                            <label>Intervall</label>
+                            <label>Intervall (in Monaten)</label>
                             <select class="form-control" name="laufend_modulo" required>
-                                <option value="1">Täglich</option>
-                                <option value="7">Wöchentlich</option>
-                                <option value="14">14-tägig</option>
-                                <option value="30" selected>Monatlich</option>
-                                <option value="90">Quartalsweise</option>
-                                <option value="365">Jährlich</option>
+                                <option value="1" selected>Monatlich (jeden Monat)</option>
+                                <option value="2">Alle 2 Monate</option>
+                                <option value="3">Quartalsweise (alle 3 Monate)</option>
+                                <option value="4">Alle 4 Monate</option>
+                                <option value="6">Halbjährlich (alle 6 Monate)</option>
+                                <option value="12">Jährlich (alle 12 Monate)</option>
                             </select>
+                            <small class="form-text text-muted">Das Cronjob-Script läuft am Monatsersten</small>
                         </div>
 
                         <div class="form-group">
@@ -823,7 +824,8 @@ if(isset($_POST["action"]) && $_POST["action"] == "delete_laufend") {
                         </div>
 
                         <div class="alert alert-info">
-                            ℹ️ <strong>Hinweis:</strong> Laufende Kosten werden automatisch am Monatsersten gebucht, wenn das Intervall (Modulo) zum aktuellen Monat passt. Monatliche Kosten (30 Tage) werden jeden Monat gebucht, quartalsweise (90 Tage) alle 3 Monate, etc.
+                            ℹ️ <strong>Hinweis:</strong> Laufende Kosten werden automatisch am Monatsersten gebucht. Der Modulo-Wert gibt an, in welchen Monaten gebucht wird:<br>
+                            <strong>1</strong> = jeden Monat | <strong>3</strong> = März, Juni, September, Dezember | <strong>12</strong> = nur im Dezember
                         </div>
 
                         <div class="text-center">
