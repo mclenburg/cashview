@@ -8,13 +8,363 @@
     <link href="http://192.168.5.103/cashview/favicon.ico" rel="shortcut icon">
     <link rel="icon" href="http://192.168.5.103/cashview/favicon.ico" type="image/ico">
     <style>
+        /* Mobile First Styles */
+        body {
+            font-size: 14px;
+            padding: 0;
+            margin: 0;
+        }
+
+        .container {
+            padding-left: 10px;
+            padding-right: 10px;
+        }
+
+        /* Navigation optimiert für Mobile */
+        .navbar {
+            padding: 0.5rem 1rem;
+            flex-wrap: wrap;
+        }
+
+        .navbar-brand {
+            font-size: 1.1rem;
+            margin-right: auto;
+        }
+
+        .btn-back {
+            font-size: 0.85rem;
+            padding: 0.4rem 0.8rem;
+        }
+
+        /* Cards für Mobile */
+        .card {
+            margin-bottom: 1rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .card-header {
+            padding: 0.75rem 1rem;
+            background-color: #f8f9fa;
+        }
+
+        .card-title {
+            font-size: 1.1rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .card-subtitle {
+            font-size: 0.85rem;
+        }
+
+        .card-body {
+            padding: 1rem;
+        }
+
+        /* Color Preview */
         .color-preview {
             width: 30px;
             height: 30px;
-            border: 1px solid #ccc;
+            border: 2px solid #ccc;
             display: inline-block;
             vertical-align: middle;
             margin-right: 10px;
+            border-radius: 4px;
+        }
+
+        /* Tabelle responsive */
+        .table-responsive {
+            font-size: 0.85rem;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .table {
+            margin-bottom: 0;
+        }
+
+        .table td,
+        .table th {
+            padding: 0.75rem;
+            vertical-align: middle;
+        }
+
+        /* Action Buttons in Tabelle */
+        .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .action-buttons .btn {
+            font-size: 0.8rem;
+            padding: 0.4rem 0.8rem;
+        }
+
+        /* Formular Optimierungen */
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-control {
+            font-size: 1rem;
+        }
+
+        input[type="color"] {
+            height: 50px;
+            cursor: pointer;
+        }
+
+        /* Alert Messages */
+        .alert {
+            margin-bottom: 1rem;
+            border-radius: 8px;
+        }
+
+        /* Submit Buttons */
+        .btn-primary,
+        .btn-success {
+            width: 100%;
+            padding: 0.75rem;
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .btn-secondary {
+            width: 100%;
+            padding: 0.75rem;
+            margin-top: 0.5rem;
+        }
+
+        /* Edit Card versteckt */
+        #editCard {
+            display: none;
+        }
+
+        /* iPhone 13 (390x844) */
+        @media only screen and (min-width: 390px) and (max-width: 428px) {
+            .container {
+                max-width: 100%;
+                padding-left: 12px;
+                padding-right: 12px;
+            }
+
+            .table-responsive {
+                font-size: 0.8rem;
+            }
+
+            .action-buttons .btn {
+                font-size: 0.75rem;
+                padding: 0.35rem 0.7rem;
+            }
+        }
+
+        /* iPad 10 (820x1180) */
+        @media only screen and (min-width: 768px) and (max-width: 1024px) {
+            body {
+                font-size: 16px;
+            }
+
+            .container {
+                max-width: 760px;
+                padding-left: 20px;
+                padding-right: 20px;
+            }
+
+            .card-title {
+                font-size: 1.3rem;
+            }
+
+            .navbar-brand {
+                font-size: 1.3rem;
+            }
+
+            .btn-back {
+                font-size: 0.95rem;
+                padding: 0.5rem 1rem;
+            }
+
+            .table-responsive {
+                font-size: 0.95rem;
+            }
+
+            .btn-primary,
+            .btn-success {
+                width: auto;
+                min-width: 250px;
+            }
+
+            .btn-secondary {
+                width: auto;
+                min-width: 150px;
+                margin-top: 0;
+                margin-left: 0.5rem;
+            }
+
+            .color-preview {
+                width: 40px;
+                height: 40px;
+            }
+        }
+
+        /* Desktop (1920x1080 und größer) */
+        @media only screen and (min-width: 1025px) {
+            body {
+                font-size: 16px;
+            }
+
+            .container {
+                max-width: 1140px;
+                padding-left: 15px;
+                padding-right: 15px;
+            }
+
+            .navbar-brand {
+                font-size: 1.5rem;
+            }
+
+            .btn-back {
+                font-size: 1rem;
+                padding: 0.5rem 1.5rem;
+            }
+
+            .card-title {
+                font-size: 1.5rem;
+            }
+
+            .table-responsive {
+                font-size: 1rem;
+            }
+
+            .btn-primary,
+            .btn-success {
+                width: auto;
+                min-width: 250px;
+            }
+
+            .btn-secondary {
+                width: auto;
+                min-width: 150px;
+                margin-top: 0;
+                margin-left: 0.5rem;
+            }
+
+            .action-buttons .btn {
+                font-size: 0.9rem;
+                padding: 0.5rem 1rem;
+            }
+
+            .color-preview {
+                width: 40px;
+                height: 40px;
+            }
+        }
+
+        /* Touch-Optimierungen */
+        @media (hover: none) and (pointer: coarse) {
+            .btn {
+                min-height: 44px;
+                min-width: 44px;
+            }
+
+            .form-control {
+                min-height: 44px;
+            }
+
+            .card {
+                margin-bottom: 1.2rem;
+            }
+        }
+
+        /* Dark Mode Support */
+        @media (prefers-color-scheme: dark) {
+            body {
+                background-color: #121212;
+                color: #ffffff;
+            }
+
+            .card {
+                background-color: #1e1e1e;
+                border-color: #333;
+            }
+
+            .card-header {
+                background-color: #2a2a2a;
+                border-bottom-color: #333;
+            }
+
+            .card-title {
+                color: #ffffff;
+            }
+
+            .card-subtitle {
+                color: #aaaaaa !important;
+            }
+
+            .table {
+                color: #ffffff;
+            }
+
+            .table thead th {
+                color: #ffffff;
+                background-color: #2a2a2a;
+                border-color: #444;
+            }
+
+            .table td {
+                color: #e0e0e0;
+                border-color: #444;
+            }
+
+            .table-striped tbody tr:nth-of-type(odd) {
+                background-color: rgba(255, 255, 255, 0.05);
+            }
+
+            .form-control {
+                background-color: #2a2a2a;
+                color: #ffffff;
+                border-color: #444;
+            }
+
+            .form-control:focus {
+                background-color: #2a2a2a;
+                color: #ffffff;
+                border-color: #667eea;
+            }
+
+            input[type="color"] {
+                background-color: #2a2a2a;
+                border-color: #444;
+            }
+
+            .form-group label {
+                color: #ffffff;
+            }
+
+            .alert-success {
+                background-color: #1a4d2e;
+                color: #51cf66;
+                border-color: #2d7a4a;
+            }
+
+            .alert-danger {
+                background-color: #4a2020;
+                color: #ff6b6b;
+                border-color: #7a2d2d;
+            }
+
+            .text-muted {
+                color: #aaaaaa !important;
+            }
+
+            .color-preview {
+                border-color: #555;
+            }
         }
     </style>
 </head>
@@ -56,7 +406,7 @@ if(isset($_POST["action"]) && $_POST["action"] == "add") {
     mysqli_query($GLOBALS["___mysqli_ston"], $insert)
         or die("ERROR: ".mysqli_error($GLOBALS["___mysqli_ston"]));
 
-    echo('<div class="alert alert-success">Kategorie erfolgreich hinzugefügt!</div>');
+    echo('<div class="alert alert-success">✅ Kategorie erfolgreich hinzugefügt!</div>');
 }
 
 // Kategorie bearbeiten
@@ -75,7 +425,7 @@ if(isset($_POST["action"]) && $_POST["action"] == "edit") {
     mysqli_query($GLOBALS["___mysqli_ston"], $update)
         or die("ERROR: ".mysqli_error($GLOBALS["___mysqli_ston"]));
 
-    echo('<div class="alert alert-success">Kategorie erfolgreich aktualisiert!</div>');
+    echo('<div class="alert alert-success">✅ Kategorie erfolgreich aktualisiert!</div>');
 }
 
 // Kategorie löschen
@@ -88,12 +438,12 @@ if(isset($_POST["action"]) && $_POST["action"] == "delete") {
     $row = mysqli_fetch_assoc($result);
 
     if($row["cnt"] > 0) {
-        echo('<div class="alert alert-danger">Kategorie kann nicht gelöscht werden, da Transaktionen existieren!</div>');
+        echo('<div class="alert alert-danger">❌ Kategorie kann nicht gelöscht werden, da Transaktionen existieren!</div>');
     } else {
         $delete = "DELETE FROM kategorien WHERE ID = $id AND manId = $mandant";
         mysqli_query($GLOBALS["___mysqli_ston"], $delete)
             or die("ERROR: ".mysqli_error($GLOBALS["___mysqli_ston"]));
-        echo('<div class="alert alert-success">Kategorie erfolgreich gelöscht!</div>');
+        echo('<div class="alert alert-success">✅ Kategorie erfolgreich gelöscht!</div>');
     }
 }
 ?>
@@ -101,7 +451,7 @@ if(isset($_POST["action"]) && $_POST["action"] == "delete") {
 <div class="container">
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
         <?php echo("<span class=\"navbar-brand\">CashView - Konfiguration</span>
-                    <a class=\"btn btn-secondary d-inline-block float-right\" href=\"index.php?manId=$mandant\" role=\"button\">Zurück</a>"); ?>
+                    <a class=\"btn btn-secondary btn-back\" href=\"index.php?manId=$mandant\" role=\"button\">Zurück</a>"); ?>
     </nav>
 
     <!-- Bestehende Kategorien -->
@@ -111,48 +461,52 @@ if(isset($_POST["action"]) && $_POST["action"] == "delete") {
             <h6 class="card-subtitle mb-2 text-muted">Kategorien für Mandant <?php echo $mandant; ?></h6>
         </div>
         <div class="card-body">
-            <table class="table table-striped">
-                <thead>
-                    <tr>
-                        <th>Farbe</th>
-                        <th>Bezeichnung</th>
-                        <th>Sortierung</th>
-                        <th>Aktionen</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php
-                    $query = "SELECT ID, bez, sortorder, statscolor, manId
-                              FROM kategorien
-                              WHERE (manId = $mandant OR manId = 0) AND sortorder <> 999
-                              ORDER BY sortorder";
-                    $result = mysqli_query($GLOBALS["___mysqli_ston"], $query)
-                        or die("ERROR: ".mysqli_error($GLOBALS["___mysqli_ston"]));
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Farbe</th>
+                            <th>Bezeichnung</th>
+                            <th>Sortierung</th>
+                            <th>Aktionen</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php
+                        $query = "SELECT ID, bez, sortorder, statscolor, manId
+                                  FROM kategorien
+                                  WHERE (manId = $mandant OR manId = 0) AND sortorder <> 999
+                                  ORDER BY sortorder";
+                        $result = mysqli_query($GLOBALS["___mysqli_ston"], $query)
+                            or die("ERROR: ".mysqli_error($GLOBALS["___mysqli_ston"]));
 
-                    while($row = mysqli_fetch_assoc($result)) {
-                        $color = explode(",", $row["statscolor"]);
-                        $rgb = "rgb(".$color[0].",".$color[1].",".$color[2].")";
-                        $is_own = ($row["manId"] == $mandant);
+                        while($row = mysqli_fetch_assoc($result)) {
+                            $color = explode(",", $row["statscolor"]);
+                            $rgb = "rgb(".$color[0].",".$color[1].",".$color[2].")";
+                            $is_own = ($row["manId"] == $mandant);
 
-                        echo("<tr>");
-                        echo("<td><div class=\"color-preview\" style=\"background-color: $rgb;\"></div></td>");
-                        echo("<td>".$row["bez"].($is_own ? "" : " (global)")."</td>");
-                        echo("<td>".$row["sortorder"]."</td>");
-                        echo("<td>");
+                            echo("<tr>");
+                            echo("<td><div class=\"color-preview\" style=\"background-color: $rgb;\"></div></td>");
+                            echo("<td>".$row["bez"].($is_own ? "" : " <span class=\"text-muted\">(global)</span>")."</td>");
+                            echo("<td>".$row["sortorder"]."</td>");
+                            echo("<td>");
 
-                        if($is_own) {
-                            echo("<button class=\"btn btn-sm btn-primary\" onclick=\"editCategory(".$row["ID"].", '".$row["bez"]."', ".$row["sortorder"].", ".$color[0].", ".$color[1].", ".$color[2].")\">Bearbeiten</button> ");
-                            echo("<button class=\"btn btn-sm btn-danger\" onclick=\"deleteCategory(".$row["ID"].")\">Löschen</button>");
-                        } else {
-                            echo("<span class=\"text-muted\">Nicht bearbeitbar</span>");
+                            if($is_own) {
+                                echo("<div class=\"action-buttons\">");
+                                echo("<button class=\"btn btn-sm btn-primary\" onclick=\"editCategory(".$row["ID"].", '".$row["bez"]."', ".$row["sortorder"].", ".$color[0].", ".$color[1].", ".$color[2].")\">Bearbeiten</button>");
+                                echo("<button class=\"btn btn-sm btn-danger\" onclick=\"deleteCategory(".$row["ID"].")\">Löschen</button>");
+                                echo("</div>");
+                            } else {
+                                echo("<span class=\"text-muted\">Nicht bearbeitbar</span>");
+                            }
+
+                            echo("</td>");
+                            echo("</tr>");
                         }
-
-                        echo("</td>");
-                        echo("</tr>");
-                    }
-                    ?>
-                </tbody>
-            </table>
+                        ?>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 
@@ -168,12 +522,12 @@ if(isset($_POST["action"]) && $_POST["action"] == "delete") {
 
                 <div class="form-group">
                     <label for="bez">Bezeichnung</label>
-                    <input type="text" class="form-control" name="bez" required>
+                    <input type="text" class="form-control" name="bez" id="bez" required>
                 </div>
 
                 <div class="form-group">
                     <label for="sortorder">Sortierung</label>
-                    <input type="number" class="form-control" name="sortorder" value="10" required>
+                    <input type="number" class="form-control" name="sortorder" id="sortorder" value="10" required>
                 </div>
 
                 <div class="form-group">
@@ -186,13 +540,15 @@ if(isset($_POST["action"]) && $_POST["action"] == "delete") {
                     </div>
                 </div>
 
-                <button type="submit" class="btn btn-success">Kategorie hinzufügen</button>
+                <div class="text-center">
+                    <button type="submit" class="btn btn-success">Kategorie hinzufügen</button>
+                </div>
             </form>
         </div>
     </div>
 
     <!-- Bearbeiten-Form (versteckt) -->
-    <div class="card mt-3" id="editCard" style="display: none;">
+    <div class="card mt-3" id="editCard">
         <div class="card-header">
             <h5 class="card-title">Kategorie bearbeiten</h5>
         </div>
@@ -222,8 +578,10 @@ if(isset($_POST["action"]) && $_POST["action"] == "delete") {
                     </div>
                 </div>
 
-                <button type="submit" class="btn btn-primary">Speichern</button>
-                <button type="button" class="btn btn-secondary" onclick="cancelEdit()">Abbrechen</button>
+                <div class="text-center">
+                    <button type="submit" class="btn btn-primary">Speichern</button>
+                    <button type="button" class="btn btn-secondary" onclick="cancelEdit()">Abbrechen</button>
+                </div>
             </form>
         </div>
     </div>
