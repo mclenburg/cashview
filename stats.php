@@ -270,12 +270,76 @@
                 border-bottom-color: #333;
             }
 
+            .card-title {
+                color: #ffffff;
+            }
+
+            .card-subtitle {
+                color: #aaaaaa !important;
+            }
+
             .table {
                 color: #ffffff;
             }
 
+            .table thead th {
+                color: #ffffff;
+                background-color: #2a2a2a;
+                border-color: #444;
+            }
+
+            .table td {
+                color: #e0e0e0;
+                border-color: #444;
+            }
+
             .table-striped tbody tr:nth-of-type(odd) {
                 background-color: rgba(255, 255, 255, 0.05);
+            }
+
+            .trend-amount {
+                color: #aaaaaa;
+            }
+
+            .trend-summary {
+                background-color: #2a2a2a;
+                color: #ffffff;
+            }
+
+            .trend-summary h6 {
+                color: #ffffff;
+            }
+
+            .trend-bar-container {
+                background: #2a2a2a;
+            }
+
+            /* DataTables im Dark Mode */
+            .dataTables_wrapper {
+                color: #ffffff;
+            }
+
+            .dataTables_wrapper .dataTables_length,
+            .dataTables_wrapper .dataTables_filter,
+            .dataTables_wrapper .dataTables_info,
+            .dataTables_wrapper .dataTables_paginate {
+                color: #ffffff;
+            }
+
+            /* Trend Indikatoren - bessere Lesbarkeit */
+            .trend-up {
+                color: #ff6b6b;
+                background: #4a2020;
+            }
+
+            .trend-down {
+                color: #51cf66;
+                background: #1a4d2e;
+            }
+
+            .trend-neutral {
+                color: #ffd43b;
+                background: #4a3d00;
             }
         }
 
