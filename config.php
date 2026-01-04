@@ -1,312 +1,212 @@
 <?php
-/**
- * CashView - Konfiguration (Kategorien / Konten / Laufende Kosten)
- * Neu aufgebaut im gleichen Bootstrap-Design, mit gleicher Funktionalität.
- *
- * Fix für "Konten-Tab öffnet nicht":
- *  - Tab-Panes sind sauber als Geschwister in EINER .tab-content-Struktur aufgebaut
- *  - korrekte aria-Attribute / IDs
- *  - optional: Hash-Sync (öffnet Tab passend zur URL #konten / #laufend)
- */
-
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
-/* =========================
-   Konfiguration DB
-   ========================= */
-$dbHost = "192.168.5.103";
-$dbUser = "cashview";
-$dbPass = "cash123";
-$dbName = "cashview";
-
-/* =========================
-   Helpers
-   ========================= */
-function h($s): string { return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
-function post($k, $d=null) { return $_POST[$k] ?? $d; }
-function get($k, $d=null) { return $_GET[$k] ?? $d; }
+function h($v): string { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 
 $mandant = -1;
-if (isset($_POST["manId"])) {
-    $mandant = (int)$_POST["manId"];
-} elseif (isset($_GET["manId"])) {
-    $mandant = (int)$_GET["manId"];
-} else {
-    echo "<!DOCTYPE html><html lang='de'><head><meta charset='utf-8'><title>CashView - Konfiguration</title></head><body>";
-    echo "Mandanten-ID nicht übergeben";
-    echo "</body></html>";
+if (isset($_POST["manId"])) $mandant = (int)$_POST["manId"];
+elseif (isset($_GET["manId"])) $mandant = (int)$_GET["manId"];
+else {
+    echo "<!DOCTYPE html><html lang='de'><head><meta charset='utf-8'><title>CashView - Konfiguration</title></head><body>Mandanten-ID nicht übergeben</body></html>";
     exit;
 }
 
-$mysqli = mysqli_connect($dbHost, $dbUser, $dbPass, $dbName);
-if (!$mysqli) {
-    die("ERROR connecting to database.");
-}
+// DB (wie bisher)
+$db = mysqli_connect("192.168.5.103", "cashview", "cash123", "cashview")
+    or die("ERROR connecting to database.");
 
 $success_message = "";
-$error_message   = "";
+$error_message = "";
 
-/* =========================
-   Actions
-   ========================= */
-$action = (string)post("action", "");
+// -------------------- ACTIONS --------------------
+$action = $_POST["action"] ?? "";
 
-/** ---------- KATEGORIEN ---------- */
+// ========== KATEGORIEN ==========
 if ($action === "add_kategorie") {
-    $bez       = trim((string)post("bez", ""));
-    $sortorder = (int)post("sortorder", 0);
-    $r         = (int)post("color_r", 0);
-    $g         = (int)post("color_g", 0);
-    $b         = (int)post("color_b", 0);
+    $bez = mysqli_real_escape_string($db, trim($_POST["bez"] ?? ""));
+    $sortorder = (int)($_POST["sortorder"] ?? 0);
+    $r = (int)($_POST["color_r"] ?? 100);
+    $g = (int)($_POST["color_g"] ?? 100);
+    $b = (int)($_POST["color_b"] ?? 255);
+    $statscolor = "$r,$g,$b";
 
     if ($bez === "") {
         $error_message = "❌ Bitte eine Bezeichnung angeben.";
     } else {
-        $statscolor = "{$r},{$g},{$b}";
-
-        $res = mysqli_query($mysqli, "SELECT MAX(ID) AS maxid FROM kategorien");
+        $res = mysqli_query($db, "SELECT MAX(ID) AS maxid FROM kategorien");
         $row = $res ? mysqli_fetch_assoc($res) : ["maxid" => 0];
         $new_id = ((int)($row["maxid"] ?? 0)) + 1;
 
-        $stmt = mysqli_prepare($mysqli, "INSERT INTO kategorien (ID, bez, sortorder, statscolor, manId) VALUES (?, ?, ?, ?, ?)");
-        mysqli_stmt_bind_param($stmt, "isisi", $new_id, $bez, $sortorder, $statscolor, $mandant);
-        if (!mysqli_stmt_execute($stmt)) {
-            $error_message = "❌ Fehler beim Speichern der Kategorie.";
-        } else {
-            $success_message = "✅ Kategorie erfolgreich hinzugefügt!";
-        }
-        mysqli_stmt_close($stmt);
+        $sql = "INSERT INTO kategorien (ID, bez, sortorder, statscolor, manId) VALUES ($new_id, '$bez', $sortorder, '$statscolor', $mandant)";
+        if (!mysqli_query($db, $sql)) $error_message = "❌ Fehler beim Speichern der Kategorie: ".mysqli_error($db);
+        else $success_message = "✅ Kategorie erfolgreich hinzugefügt!";
     }
 }
 
 if ($action === "edit_kategorie") {
-    $id        = (int)post("id", 0);
-    $bez       = trim((string)post("bez", ""));
-    $sortorder = (int)post("sortorder", 0);
-    $r         = (int)post("color_r", 0);
-    $g         = (int)post("color_g", 0);
-    $b         = (int)post("color_b", 0);
+    $id = (int)($_POST["id"] ?? 0);
+    $bez = mysqli_real_escape_string($db, trim($_POST["bez"] ?? ""));
+    $sortorder = (int)($_POST["sortorder"] ?? 0);
+    $r = (int)($_POST["color_r"] ?? 100);
+    $g = (int)($_POST["color_g"] ?? 100);
+    $b = (int)($_POST["color_b"] ?? 255);
+    $statscolor = "$r,$g,$b";
 
     if ($id <= 0 || $bez === "") {
         $error_message = "❌ Ungültige Eingaben.";
     } else {
-        $statscolor = "{$r},{$g},{$b}";
-        $stmt = mysqli_prepare($mysqli, "UPDATE kategorien SET bez = ?, sortorder = ?, statscolor = ? WHERE ID = ? AND manId = ?");
-        mysqli_stmt_bind_param($stmt, "sisii", $bez, $sortorder, $statscolor, $id, $mandant);
-        if (!mysqli_stmt_execute($stmt)) {
-            $error_message = "❌ Fehler beim Aktualisieren der Kategorie.";
-        } else {
-            $success_message = "✅ Kategorie erfolgreich aktualisiert!";
-        }
-        mysqli_stmt_close($stmt);
+        $sql = "UPDATE kategorien SET bez='$bez', sortorder=$sortorder, statscolor='$statscolor' WHERE ID=$id AND manId=$mandant";
+        if (!mysqli_query($db, $sql)) $error_message = "❌ Fehler beim Aktualisieren: ".mysqli_error($db);
+        else $success_message = "✅ Kategorie erfolgreich aktualisiert!";
     }
 }
 
 if ($action === "delete_kategorie") {
-    $id = (int)post("id", 0);
-
-    // Nur eigene Kategorien dürfen gelöscht werden (manId = Mandant)
+    $id = (int)($_POST["id"] ?? 0);
     if ($id <= 0) {
         $error_message = "❌ Ungültige Kategorie-ID.";
     } else {
-        // Check, ob Kategorie in Transaktionen genutzt wird
-        $stmt = mysqli_prepare($mysqli, "SELECT COUNT(*) AS cnt FROM transaktionen WHERE KatID = ? AND manId = ?");
-        mysqli_stmt_bind_param($stmt, "ii", $id, $mandant);
-        mysqli_stmt_execute($stmt);
-        $res = mysqli_stmt_get_result($stmt);
-        $row = $res ? mysqli_fetch_assoc($res) : ["cnt" => 0];
-        mysqli_stmt_close($stmt);
-
+        $check = mysqli_query($db, "SELECT COUNT(*) AS cnt FROM transaktionen WHERE katID = $id AND manId = $mandant");
+        $row = $check ? mysqli_fetch_assoc($check) : ["cnt" => 0];
         if ((int)$row["cnt"] > 0) {
             $error_message = "❌ Kategorie kann nicht gelöscht werden, da Transaktionen existieren!";
         } else {
-            $stmt = mysqli_prepare($mysqli, "DELETE FROM kategorien WHERE ID = ? AND manId = ?");
-            mysqli_stmt_bind_param($stmt, "ii", $id, $mandant);
-            if (!mysqli_stmt_execute($stmt)) {
-                $error_message = "❌ Fehler beim Löschen der Kategorie.";
+            if (!mysqli_query($db, "DELETE FROM kategorien WHERE ID=$id AND manId=$mandant")) {
+                $error_message = "❌ Fehler beim Löschen: ".mysqli_error($db);
             } else {
                 $success_message = "✅ Kategorie erfolgreich gelöscht!";
             }
-            mysqli_stmt_close($stmt);
         }
     }
 }
 
-/** ---------- KONTEN ---------- */
+// ========== KONTEN ==========
 if ($action === "add_konto") {
-    $bez            = trim((string)post("konto_bez", ""));
-    $grenze         = (float)post("konto_grenze", 0);
-    $initialbetrag  = (float)post("konto_initial", 0);
+    $bez = mysqli_real_escape_string($db, trim($_POST["konto_bez"] ?? ""));
+    $grenze = (float)($_POST["konto_grenze"] ?? 0);
+    $initialbetrag = (float)($_POST["konto_initial"] ?? 0);
 
     if ($bez === "") {
         $error_message = "❌ Bitte eine Kontobezeichnung angeben.";
     } else {
-        $res = mysqli_query($mysqli, "SELECT MAX(id) AS maxid FROM Konten");
+        $res = mysqli_query($db, "SELECT MAX(id) AS maxid FROM Konten");
         $row = $res ? mysqli_fetch_assoc($res) : ["maxid" => 0];
         $new_id = ((int)($row["maxid"] ?? 0)) + 1;
 
-        $stmt = mysqli_prepare($mysqli, "INSERT INTO Konten (id, Bez, Grenze, manId) VALUES (?, ?, ?, ?)");
-        mysqli_stmt_bind_param($stmt, "isdi", $new_id, $bez, $grenze, $mandant);
-        if (!mysqli_stmt_execute($stmt)) {
-            $error_message = "❌ Fehler beim Speichern des Kontos.";
-            mysqli_stmt_close($stmt);
+        $sql = "INSERT INTO Konten (id, Bez, Grenze, manId) VALUES ($new_id, '$bez', '$grenze', $mandant)";
+        if (!mysqli_query($db, $sql)) {
+            $error_message = "❌ Fehler beim Speichern des Kontos: ".mysqli_error($db);
         } else {
-            mysqli_stmt_close($stmt);
-
-            $res2 = mysqli_query($mysqli, "SELECT MAX(initId) AS maxid FROM Initialwerte");
+            $res2 = mysqli_query($db, "SELECT MAX(initId) AS maxid FROM Initialwerte");
             $row2 = $res2 ? mysqli_fetch_assoc($res2) : ["maxid" => 0];
             $new_init_id = ((int)($row2["maxid"] ?? 0)) + 1;
 
-            $stmt2 = mysqli_prepare($mysqli, "INSERT INTO Initialwerte (initId, Betrag, KtoId) VALUES (?, ?, ?)");
-            mysqli_stmt_bind_param($stmt2, "idi", $new_init_id, $initialbetrag, $new_id);
-            if (!mysqli_stmt_execute($stmt2)) {
-                $error_message = "❌ Konto angelegt, aber Initialwert konnte nicht gespeichert werden.";
-            } else {
-                $success_message = "✅ Konto erfolgreich hinzugefügt!";
-            }
-            mysqli_stmt_close($stmt2);
+            $sql2 = "INSERT INTO Initialwerte (initId, Betrag, KtoId) VALUES ($new_init_id, $initialbetrag, $new_id)";
+            if (!mysqli_query($db, $sql2)) $error_message = "❌ Konto angelegt, aber Initialwert nicht gespeichert: ".mysqli_error($db);
+            else $success_message = "✅ Konto erfolgreich hinzugefügt!";
         }
     }
 }
 
 if ($action === "edit_konto") {
-    $id     = (int)post("konto_id", 0);
-    $bez    = trim((string)post("konto_bez", ""));
-    $grenze = (float)post("konto_grenze", 0);
+    $id = (int)($_POST["konto_id"] ?? 0);
+    $bez = mysqli_real_escape_string($db, trim($_POST["konto_bez"] ?? ""));
+    $grenze = (float)($_POST["konto_grenze"] ?? 0);
 
     if ($id <= 0 || $bez === "") {
         $error_message = "❌ Ungültige Eingaben.";
     } else {
-        $stmt = mysqli_prepare($mysqli, "UPDATE Konten SET Bez = ?, Grenze = ? WHERE id = ? AND manId = ?");
-        mysqli_stmt_bind_param($stmt, "sdii", $bez, $grenze, $id, $mandant);
-        if (!mysqli_stmt_execute($stmt)) {
-            $error_message = "❌ Fehler beim Aktualisieren des Kontos.";
-        } else {
-            $success_message = "✅ Konto erfolgreich aktualisiert!";
-        }
-        mysqli_stmt_close($stmt);
+        $sql = "UPDATE Konten SET Bez='$bez', Grenze='$grenze' WHERE id=$id AND manId=$mandant";
+        if (!mysqli_query($db, $sql)) $error_message = "❌ Fehler beim Aktualisieren: ".mysqli_error($db);
+        else $success_message = "✅ Konto erfolgreich aktualisiert!";
     }
 }
 
 if ($action === "delete_konto") {
-    $id = (int)post("konto_id", 0);
+    $id = (int)($_POST["konto_id"] ?? 0);
     if ($id <= 0) {
         $error_message = "❌ Ungültige Konto-ID.";
     } else {
-        $stmt = mysqli_prepare($mysqli, "SELECT COUNT(*) AS cnt FROM transaktionen WHERE KtoID = ? AND manId = ?");
-        mysqli_stmt_bind_param($stmt, "ii", $id, $mandant);
-        mysqli_stmt_execute($stmt);
-        $res = mysqli_stmt_get_result($stmt);
-        $row = $res ? mysqli_fetch_assoc($res) : ["cnt" => 0];
-        mysqli_stmt_close($stmt);
+        $check = mysqli_query($db, "SELECT COUNT(*) AS cnt FROM transaktionen WHERE KtoID = $id AND manId = $mandant");
+        $row = $check ? mysqli_fetch_assoc($check) : ["cnt" => 0];
 
         if ((int)$row["cnt"] > 0) {
             $error_message = "❌ Konto kann nicht gelöscht werden, da Transaktionen existieren!";
         } else {
-            mysqli_query($mysqli, "DELETE FROM Initialwerte WHERE KtoId = {$id}");
-            $stmt2 = mysqli_prepare($mysqli, "DELETE FROM Konten WHERE id = ? AND manId = ?");
-            mysqli_stmt_bind_param($stmt2, "ii", $id, $mandant);
-            if (!mysqli_stmt_execute($stmt2)) {
-                $error_message = "❌ Fehler beim Löschen des Kontos.";
+            mysqli_query($db, "DELETE FROM Initialwerte WHERE KtoId = $id");
+            if (!mysqli_query($db, "DELETE FROM Konten WHERE id=$id AND manId=$mandant")) {
+                $error_message = "❌ Fehler beim Löschen: ".mysqli_error($db);
             } else {
                 $success_message = "✅ Konto erfolgreich gelöscht!";
             }
-            mysqli_stmt_close($stmt2);
         }
     }
 }
 
-/** ---------- LAUFENDE KOSTEN ---------- */
+// ========== LAUFENDE KOSTEN ==========
 if ($action === "add_laufend") {
-    $wert         = (float)post("laufend_wert", 0);
-    $ktoID        = (int)post("laufend_konto", 0);
-    $katID        = (int)post("laufend_kategorie", 0);
-    $modulo       = (int)post("laufend_modulo", 1);
-    $beschreibung = trim((string)post("laufend_beschreibung", ""));
+    $beschreibung = mysqli_real_escape_string($db, trim($_POST["laufend_beschreibung"] ?? ""));
+    $wert = (float)($_POST["laufend_wert"] ?? 0);
+    $modulo = (int)($_POST["laufend_modulo"] ?? 1);
+    $ktoID = (int)($_POST["laufend_konto"] ?? 0);
+    $katID = (int)($_POST["laufend_kategorie"] ?? 0);
 
-    if ($beschreibung === "" || $ktoID <= 0 || $katID <= 0 || $wert == 0.0) {
-        $error_message = "❌ Bitte alle Felder korrekt ausfüllen (Beschreibung, Betrag, Konto, Kategorie).";
+    if ($beschreibung === "" || $wert == 0.0 || $ktoID <= 0 || $katID <= 0) {
+        $error_message = "❌ Bitte alle Felder korrekt ausfüllen.";
     } else {
-        $res = mysqli_query($mysqli, "SELECT MAX(id) AS maxid FROM laufendes");
+        $res = mysqli_query($db, "SELECT MAX(id) AS maxid FROM laufendes");
         $row = $res ? mysqli_fetch_assoc($res) : ["maxid" => 0];
         $new_id = ((int)($row["maxid"] ?? 0)) + 1;
 
-        $stmt = mysqli_prepare($mysqli, "INSERT INTO laufendes (id, Wert, ktoID, katID, modulo, Beschreibung, manId) VALUES (?, ?, ?, ?, ?, ?, ?)");
-        mysqli_stmt_bind_param($stmt, "idiiisi", $new_id, $wert, $ktoID, $katID, $modulo, $beschreibung, $mandant);
-        if (!mysqli_stmt_execute($stmt)) {
-            $error_message = "❌ Fehler beim Speichern der laufenden Kosten.";
-        } else {
-            $success_message = "✅ Laufende Kosten erfolgreich hinzugefügt!";
-        }
-        mysqli_stmt_close($stmt);
+        $sql = "INSERT INTO laufendes (id, Wert, ktoID, katID, modulo, Beschreibung, manId)
+                VALUES ($new_id, $wert, $ktoID, $katID, $modulo, '$beschreibung', $mandant)";
+        if (!mysqli_query($db, $sql)) $error_message = "❌ Fehler beim Speichern: ".mysqli_error($db);
+        else $success_message = "✅ Laufende Kosten erfolgreich hinzugefügt!";
     }
 }
 
 if ($action === "delete_laufend") {
-    $id = (int)post("laufend_id", 0);
-    if ($id <= 0) {
-        $error_message = "❌ Ungültige ID.";
-    } else {
-        $stmt = mysqli_prepare($mysqli, "DELETE FROM laufendes WHERE id = ? AND manId = ?");
-        mysqli_stmt_bind_param($stmt, "ii", $id, $mandant);
-        if (!mysqli_stmt_execute($stmt)) {
-            $error_message = "❌ Fehler beim Löschen der laufenden Kosten.";
+    $id = (int)($_POST["laufend_id"] ?? 0);
+    if ($id <= 0) $error_message = "❌ Ungültige ID.";
+    else {
+        if (!mysqli_query($db, "DELETE FROM laufendes WHERE id=$id AND manId=$mandant")) {
+            $error_message = "❌ Fehler beim Löschen: ".mysqli_error($db);
         } else {
             $success_message = "✅ Laufende Kosten erfolgreich gelöscht!";
         }
-        mysqli_stmt_close($stmt);
     }
 }
 
-/* =========================
-   Data for display
-   ========================= */
-
-// Kategorien (eigene + globale)
+// -------------------- DATA --------------------
 $kategorien = [];
 $q = "SELECT ID, bez, sortorder, statscolor, manId
       FROM kategorien
-      WHERE (manId = ? OR manId = 0) AND sortorder <> 999
+      WHERE (manId = $mandant OR manId = 0) AND sortorder <> 999
       ORDER BY sortorder";
-$stmt = mysqli_prepare($mysqli, $q);
-mysqli_stmt_bind_param($stmt, "i", $mandant);
-mysqli_stmt_execute($stmt);
-$res = mysqli_stmt_get_result($stmt);
-while ($res && ($row = mysqli_fetch_assoc($res))) $kategorien[] = $row;
-mysqli_stmt_close($stmt);
+$r = mysqli_query($db, $q);
+while ($r && ($row = mysqli_fetch_assoc($r))) $kategorien[] = $row;
 
-// Konten (eigene)
 $konten = [];
 $q = "SELECT k.id, k.Bez, k.Grenze, i.Betrag
       FROM Konten k
-      LEFT JOIN Initialwerte i ON i.KtoId = k.id
-      WHERE k.manId = ?
+      LEFT JOIN Initialwerte i ON k.id = i.KtoId
+      WHERE k.manId = $mandant
       ORDER BY k.Bez";
-$stmt = mysqli_prepare($mysqli, $q);
-mysqli_stmt_bind_param($stmt, "i", $mandant);
-mysqli_stmt_execute($stmt);
-$res = mysqli_stmt_get_result($stmt);
-while ($res && ($row = mysqli_fetch_assoc($res))) $konten[] = $row;
-mysqli_stmt_close($stmt);
+$r = mysqli_query($db, $q);
+while ($r && ($row = mysqli_fetch_assoc($r))) $konten[] = $row;
 
-// Laufendes (eigene)
 $laufendes = [];
-$q = "SELECT l.id, l.Wert, l.ktoID, l.katID, l.modulo, l.Beschreibung,
-             k.Bez AS KontoBez, ka.bez AS KatBez
+$q = "SELECT l.id, l.Wert, l.modulo, l.Beschreibung,
+             k.Bez AS KontoBez, kat.bez AS KatBez
       FROM laufendes l
-      LEFT JOIN Konten k ON k.id = l.ktoID
-      LEFT JOIN kategorien ka ON ka.ID = l.katID
-      WHERE l.manId = ?
+      LEFT JOIN Konten k ON l.ktoID = k.id
+      LEFT JOIN kategorien kat ON l.katID = kat.ID
+      WHERE l.manId = $mandant
       ORDER BY l.Beschreibung";
-$stmt = mysqli_prepare($mysqli, $q);
-mysqli_stmt_bind_param($stmt, "i", $mandant);
-mysqli_stmt_execute($stmt);
-$res = mysqli_stmt_get_result($stmt);
-while ($res && ($row = mysqli_fetch_assoc($res))) $laufendes[] = $row;
-mysqli_stmt_close($stmt);
+$r = mysqli_query($db, $q);
+while ($r && ($row = mysqli_fetch_assoc($r))) $laufendes[] = $row;
 
-// Intervalle für Anzeige
 $intervalle = [
     1  => "Monatlich",
     2  => "Alle 2 Monate",
@@ -323,65 +223,155 @@ $intervalle = [
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <title>CashView - Konfiguration</title>
 
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
-          integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
     <link href="http://192.168.5.103/cashview/favicon.ico" rel="shortcut icon">
     <link rel="icon" href="http://192.168.5.103/cashview/favicon.ico" type="image/ico">
 
     <style>
         /* Mobile First Styles */
         body { font-size: 14px; padding: 0; margin: 0; }
-        .container { padding: 1rem; }
-        .nav-tabs { margin-bottom: 1rem; border-bottom: 2px solid #dee2e6; }
-        .nav-tabs .nav-link { border: none; border-bottom: 3px solid transparent; padding: 0.75rem 0.5rem; font-size: 0.95rem; }
-        .nav-tabs .nav-link.active { border-bottom-color: #007bff; font-weight: 600; }
+        .container { padding-left: 10px; padding-right: 10px; }
+
+        /* Navigation */
+        .navbar { padding: 0.5rem 1rem; flex-wrap: wrap; }
+        .navbar-brand { font-size: 1.1rem; margin-right: auto; }
+        .btn-back { font-size: 0.85rem; padding: 0.4rem 0.8rem; }
+
+        /* Tabs */
+        .nav-tabs { margin-bottom: 1.5rem; border-bottom: 2px solid #dee2e6; }
+        .nav-tabs .nav-link {
+            color: #495057;
+            border: none;
+            border-bottom: 3px solid transparent;
+            padding: 0.75rem 1rem;
+            font-weight: 600;
+        }
+        .nav-tabs .nav-link.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+            background: transparent;
+        }
+
+        /* Cards */
         .card { margin-bottom: 1rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         .card-header { padding: 0.75rem 1rem; background-color: #f8f9fa; }
         .card-title { font-size: 1.1rem; margin-bottom: 0.25rem; }
+        .card-subtitle { font-size: 0.85rem; }
         .card-body { padding: 1rem; }
-        .table { font-size: 0.85rem; }
-        .table th { border-top: none; font-weight: 600; }
-        .btn { padding: 0.5rem 1rem; font-size: 0.9rem; border-radius: 6px; }
-        .btn-sm { padding: 0.25rem 0.5rem; font-size: 0.8rem; }
-        .form-group { margin-bottom: 1rem; }
-        .form-control { border-radius: 6px; font-size: 0.9rem; }
-        .color-preview { width: 24px; height: 24px; border-radius: 4px; border: 1px solid #ddd; display: inline-block; vertical-align: middle; }
+
+        /* Color Preview */
+        .color-preview {
+            width: 30px; height: 30px; border: 2px solid #ccc; display: inline-block;
+            vertical-align: middle; margin-right: 10px; border-radius: 4px;
+        }
+
+        /* Tabelle responsive */
+        .table-responsive { font-size: 0.85rem; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        .table { margin-bottom: 0; }
+        .table td, .table th { padding: 0.75rem; vertical-align: middle; }
+
+        /* Action Buttons */
         .action-buttons { display: flex; gap: 0.5rem; flex-wrap: wrap; }
-        .alert { border-radius: 8px; margin-bottom: 1rem; }
+        .action-buttons .btn { font-size: 0.8rem; padding: 0.4rem 0.8rem; }
+
+        /* Formular */
+        .form-group { margin-bottom: 1rem; }
+        .form-group label { font-weight: 600; margin-bottom: 0.5rem; }
+        .form-control { font-size: 1rem; }
+        input[type="color"] { height: 50px; cursor: pointer; }
+
+        /* Alerts */
+        .alert { border-radius: 8px; border: none; padding: 1rem 1.5rem; margin-bottom: 1.5rem; }
+
+        /* Buttons */
+        .btn-primary, .btn-success { width: 100%; padding: 0.75rem; font-size: 1rem; font-weight: 600; }
+        .btn-secondary { width: 100%; padding: 0.75rem; margin-top: 0.5rem; }
+
+        /* Edit Cards versteckt */
+        .edit-card { display: none; }
+
+        /* iPad / Desktop */
         @media (min-width: 768px) {
             body { font-size: 16px; }
-            .container { max-width: 1200px; }
-            .nav-tabs .nav-link { padding: 1rem 1.5rem; font-size: 1rem; }
-            .table { font-size: 0.9rem; }
+            .container { max-width: 760px; padding-left: 20px; padding-right: 20px; }
+            .card-title { font-size: 1.3rem; }
+            .navbar-brand { font-size: 1.3rem; }
+            .btn-back { font-size: 0.95rem; padding: 0.5rem 1rem; }
+            .table-responsive { font-size: 0.95rem; }
+            .btn-primary, .btn-success { width: auto; min-width: 250px; }
+            .btn-secondary { width: auto; min-width: 150px; margin-top: 0; margin-left: 0.5rem; }
+            .color-preview { width: 40px; height: 40px; }
+        }
+        @media (min-width: 1025px) {
+            .container { max-width: 1140px; padding-left: 15px; padding-right: 15px; }
+            .navbar-brand { font-size: 1.5rem; }
+            .btn-back { font-size: 1rem; padding: 0.5rem 1.5rem; }
+            .card-title { font-size: 1.5rem; }
+            .table-responsive { font-size: 1rem; }
+            .action-buttons .btn { font-size: 0.9rem; padding: 0.5rem 1rem; }
+        }
+
+        /* Touch */
+        @media (hover: none) and (pointer: coarse) {
+            .btn { min-height: 44px; min-width: 44px; }
+            .form-control { min-height: 44px; }
+            .card { margin-bottom: 1.2rem; }
+        }
+
+        /* Dark Mode (wie vorher) */
+        @media (prefers-color-scheme: dark) {
+            body { background-color: #121212; color: #ffffff; }
+            .card { background-color: #1e1e1e; border-color: #333; }
+            .card-header { background-color: #2a2a2a; border-bottom-color: #333; }
+            .card-title { color: #ffffff; }
+            .card-subtitle { color: #aaaaaa !important; }
+            .table { color: #ffffff; }
+            .table thead th { color: #ffffff; background-color: #2a2a2a; border-color: #444; }
+            .table td { color: #e0e0e0; border-color: #444; }
+            .table-striped tbody tr:nth-of-type(odd) { background-color: rgba(255,255,255,0.05); }
+            .form-control { background-color: #2a2a2a; color: #ffffff; border-color: #444; }
+            .form-control:focus { background-color: #2a2a2a; color: #ffffff; border-color: #667eea; }
+            input[type="color"] { background-color: #2a2a2a; border-color: #444; }
+            .form-group label { color: #ffffff; }
+            .alert-success { background-color: #1a4d2e; color: #51cf66; border-color: #2d7a4a; }
+            .alert-danger { background-color: #4a2020; color: #ff6b6b; border-color: #7a2d2d; }
+            .text-muted { color: #aaaaaa !important; }
+            .color-preview { border-color: #555; }
+            .nav-tabs { border-bottom-color: #444; }
+            .nav-tabs .nav-link { color: #aaaaaa; }
+            .nav-tabs .nav-link.active { color: #667eea; }
         }
     </style>
 </head>
 <body>
+
 <div class="container">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <span class="navbar-brand">CashView - Konfiguration</span>
+        <a class="btn btn-secondary btn-back" href="index.php?manId=<?=$mandant?>" role="button">Zurück</a>
+    </nav>
 
     <?php if ($success_message): ?>
-        <div class="alert alert-success"><?= h($success_message) ?></div>
+        <div class="alert alert-success"><?=$success_message?></div>
     <?php endif; ?>
     <?php if ($error_message): ?>
-        <div class="alert alert-danger"><?= h($error_message) ?></div>
+        <div class="alert alert-danger"><?=$error_message?></div>
     <?php endif; ?>
 
+    <!-- Tabs -->
     <ul class="nav nav-tabs" id="configTabs" role="tablist">
         <li class="nav-item">
-            <a class="nav-link active" id="kategorien-tab" data-toggle="tab" href="#kategorien" role="tab"
-               aria-controls="kategorien" aria-selected="true">📁 Kategorien</a>
+            <a class="nav-link active" id="kategorien-tab" data-toggle="tab" href="#kategorien" role="tab">📁 Kategorien</a>
         </li>
         <li class="nav-item">
-            <a class="nav-link" id="konten-tab" data-toggle="tab" href="#konten" role="tab"
-               aria-controls="konten" aria-selected="false">💳 Konten</a>
+            <a class="nav-link" id="konten-tab" data-toggle="tab" href="#konten" role="tab">💳 Konten</a>
         </li>
         <li class="nav-item">
-            <a class="nav-link" id="laufend-tab" data-toggle="tab" href="#laufend" role="tab"
-               aria-controls="laufend" aria-selected="false">🔄 Laufende Kosten</a>
+            <a class="nav-link" id="laufend-tab" data-toggle="tab" href="#laufend" role="tab">🔄 Laufende Kosten</a>
         </li>
     </ul>
 
-    <!-- WICHTIG: Alle 3 Tab-Panes als direkte Kinder von .tab-content (Fix für "Konten öffnet nicht") -->
+    <!-- WICHTIG: Tab-Panes sind Geschwister (Tab-Bug-Fix) -->
     <div class="tab-content" id="configTabsContent">
 
         <!-- ========== TAB: KATEGORIEN ========== -->
@@ -389,7 +379,7 @@ $intervalle = [
             <div class="card">
                 <div class="card-header">
                     <h5 class="card-title">Meine Kategorien</h5>
-                    <h6 class="card-subtitle mb-2 text-muted">Kategorien für Mandant <?= (int)$mandant; ?></h6>
+                    <h6 class="card-subtitle mb-2 text-muted">Kategorien für Mandant <?=$mandant?></h6>
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
@@ -399,7 +389,6 @@ $intervalle = [
                                 <th>Farbe</th>
                                 <th>Bezeichnung</th>
                                 <th>Sortierung</th>
-                                <th>Typ</th>
                                 <th>Aktionen</th>
                             </tr>
                             </thead>
@@ -407,36 +396,33 @@ $intervalle = [
                             <?php foreach ($kategorien as $row): ?>
                                 <?php
                                 $color = explode(",", (string)$row["statscolor"]);
-                                $r = (int)($color[0] ?? 0);
-                                $g = (int)($color[1] ?? 0);
-                                $b = (int)($color[2] ?? 0);
-                                $rgb = "rgb({$r},{$g},{$b})";
-                                $is_own = ((int)$row["manId"] === (int)$mandant);
+                                $r = (int)($color[0] ?? 100);
+                                $g = (int)($color[1] ?? 100);
+                                $b = (int)($color[2] ?? 255);
+                                $rgb = "rgb($r,$g,$b)";
+                                $is_own = ((int)$row["manId"] === $mandant);
                                 ?>
                                 <tr>
-                                    <td><div class="color-preview" style="background: <?= h($rgb) ?>"></div></td>
-                                    <td><?= h($row["bez"]) ?></td>
+                                    <td><div class="color-preview" style="background-color: <?=$rgb?>;"></div></td>
+                                    <td><?=h($row["bez"])?><?=$is_own ? "" : " <span class='text-muted'>(global)</span>"?></td>
                                     <td><?= (int)$row["sortorder"] ?></td>
-                                    <td><?= $is_own ? "Eigene" : "Global" ?></td>
                                     <td>
-                                        <div class="action-buttons">
-                                            <?php if ($is_own): ?>
-                                                <button class="btn btn-sm btn-outline-primary"
-                                                        onclick="startEditKategorie(<?= (int)$row['ID'] ?>,'<?= h($row['bez']) ?>',<?= (int)$row['sortorder'] ?>,<?= $r ?>,<?= $g ?>,<?= $b ?>)">
+                                        <?php if ($is_own): ?>
+                                            <div class="action-buttons">
+                                                <button class="btn btn-sm btn-primary"
+                                                        onclick="editKategorie(<?= (int)$row['ID']?>,'<?= h($row['bez'])?>',<?= (int)$row['sortorder']?>,<?= $r?>,<?= $g?>,<?= $b?>)">
                                                     Bearbeiten
                                                 </button>
-                                                <button class="btn btn-sm btn-outline-danger" onclick="deleteKategorie(<?= (int)$row['ID'] ?>)">
-                                                    Löschen
-                                                </button>
-                                            <?php else: ?>
-                                                <span class="text-muted">—</span>
-                                            <?php endif; ?>
-                                        </div>
+                                                <button class="btn btn-sm btn-danger" onclick="deleteKategorie(<?= (int)$row['ID']?>)">Löschen</button>
+                                            </div>
+                                        <?php else: ?>
+                                            <span class="text-muted">Nicht bearbeitbar</span>
+                                        <?php endif; ?>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>
                             <?php if (count($kategorien) === 0): ?>
-                                <tr><td colspan="5" class="text-muted">Keine Kategorien vorhanden.</td></tr>
+                                <tr><td colspan="4" class="text-muted">Keine Kategorien vorhanden.</td></tr>
                             <?php endif; ?>
                             </tbody>
                         </table>
@@ -444,65 +430,65 @@ $intervalle = [
                 </div>
             </div>
 
-            <!-- Kategorie hinzufügen -->
+            <!-- Neue Kategorie -->
             <div class="card">
                 <div class="card-header">
                     <h5 class="card-title">Neue Kategorie hinzufügen</h5>
                 </div>
                 <div class="card-body">
                     <form method="POST" action="config.php">
-                        <input type="hidden" name="manId" value="<?= (int)$mandant ?>">
+                        <input type="hidden" name="manId" value="<?=$mandant?>">
                         <input type="hidden" name="action" value="add_kategorie">
 
                         <div class="form-group">
                             <label>Bezeichnung</label>
-                            <input type="text" name="bez" class="form-control" required>
+                            <input type="text" class="form-control" name="bez" required>
                         </div>
 
                         <div class="form-group">
-                            <label>Sortierreihenfolge</label>
-                            <input type="number" name="sortorder" class="form-control" value="0" required>
+                            <label>Sortierung</label>
+                            <input type="number" class="form-control" name="sortorder" value="10" required>
                         </div>
 
                         <div class="form-group">
                             <label>Farbe</label>
-                            <input type="color" id="colorpicker" class="form-control" value="#007bff" style="height: 44px;">
-                            <input type="hidden" name="color_r" id="color_r" value="0">
-                            <input type="hidden" name="color_g" id="color_g" value="123">
+                            <input type="color" class="form-control" id="colorpicker" value="#6464ff">
+                            <input type="hidden" name="color_r" id="color_r" value="100">
+                            <input type="hidden" name="color_g" id="color_g" value="100">
                             <input type="hidden" name="color_b" id="color_b" value="255">
                         </div>
 
                         <div class="text-center">
-                            <button type="submit" class="btn btn-primary">Hinzufügen</button>
+                            <button type="submit" class="btn btn-success">Kategorie hinzufügen</button>
                         </div>
                     </form>
                 </div>
             </div>
 
-            <!-- Kategorie bearbeiten (hidden) -->
-            <div class="card" id="editKategorieCard" style="display:none;">
+            <!-- Edit Kategorie -->
+            <div class="card edit-card" id="editKategorieCard">
                 <div class="card-header">
                     <h5 class="card-title">Kategorie bearbeiten</h5>
                 </div>
                 <div class="card-body">
                     <form method="POST" action="config.php" id="editKategorieForm">
-                        <input type="hidden" name="manId" value="<?= (int)$mandant ?>">
+                        <input type="hidden" name="manId" value="<?=$mandant?>">
                         <input type="hidden" name="action" value="edit_kategorie">
                         <input type="hidden" name="id" id="edit_kat_id">
 
                         <div class="form-group">
                             <label>Bezeichnung</label>
-                            <input type="text" name="bez" id="edit_kat_bez" class="form-control" required>
+                            <input type="text" class="form-control" name="bez" id="edit_kat_bez" required>
                         </div>
 
                         <div class="form-group">
-                            <label>Sortierreihenfolge</label>
-                            <input type="number" name="sortorder" id="edit_kat_sortorder" class="form-control" required>
+                            <label>Sortierung</label>
+                            <input type="number" class="form-control" name="sortorder" id="edit_kat_sortorder" required>
                         </div>
 
                         <div class="form-group">
                             <label>Farbe</label>
-                            <input type="color" id="edit_kat_colorpicker" class="form-control" style="height: 44px;">
+                            <input type="color" class="form-control" id="edit_kat_colorpicker">
                             <input type="hidden" name="color_r" id="edit_kat_color_r">
                             <input type="hidden" name="color_g" id="edit_kat_color_g">
                             <input type="hidden" name="color_b" id="edit_kat_color_b">
@@ -537,18 +523,16 @@ $intervalle = [
                             <tbody>
                             <?php foreach ($konten as $row): ?>
                                 <tr>
-                                    <td><?= h($row["Bez"]) ?></td>
-                                    <td><?= number_format((float)($row["Betrag"] ?? 0), 2, ',', '.') ?> €</td>
-                                    <td><?= number_format((float)($row["Grenze"] ?? 0), 2, ',', '.') ?> €</td>
+                                    <td><?=h($row["Bez"])?></td>
+                                    <td><?=number_format((float)($row["Betrag"] ?? 0), 2, ',', '.')?> €</td>
+                                    <td><?=number_format((float)($row["Grenze"] ?? 0), 2, ',', '.')?> €</td>
                                     <td>
                                         <div class="action-buttons">
-                                            <button class="btn btn-sm btn-outline-primary"
-                                                    onclick="startEditKonto(<?= (int)$row['id'] ?>,'<?= h($row['Bez']) ?>',<?= (float)$row['Grenze'] ?>)">
+                                            <button class="btn btn-sm btn-primary"
+                                                    onclick="editKonto(<?= (int)$row['id']?>,'<?= h($row['Bez'])?>',<?= (float)$row['Grenze']?>)">
                                                 Bearbeiten
                                             </button>
-                                            <button class="btn btn-sm btn-outline-danger" onclick="deleteKonto(<?= (int)$row['id'] ?>)">
-                                                Löschen
-                                            </button>
+                                            <button class="btn btn-sm btn-danger" onclick="deleteKonto(<?= (int)$row['id']?>)">Löschen</button>
                                         </div>
                                     </td>
                                 </tr>
@@ -562,57 +546,63 @@ $intervalle = [
                 </div>
             </div>
 
-            <!-- Konto hinzufügen -->
+            <!-- Neues Konto -->
             <div class="card">
                 <div class="card-header">
                     <h5 class="card-title">Neues Konto hinzufügen</h5>
                 </div>
                 <div class="card-body">
                     <form method="POST" action="config.php">
-                        <input type="hidden" name="manId" value="<?= (int)$mandant ?>">
+                        <input type="hidden" name="manId" value="<?=$mandant?>">
                         <input type="hidden" name="action" value="add_konto">
 
                         <div class="form-group">
-                            <label>Konto-Bezeichnung</label>
-                            <input type="text" name="konto_bez" class="form-control" required>
+                            <label>Kontobezeichnung</label>
+                            <input type="text" class="form-control" name="konto_bez" placeholder="z.B. Girokonto" required>
                         </div>
 
                         <div class="form-group">
                             <label>Anfangsbestand</label>
-                            <input type="number" step="0.01" name="konto_initial" class="form-control" value="0.00" required>
+                            <input type="number" step="0.01" class="form-control" name="konto_initial" placeholder="0.00" required>
+                            <small class="form-text text-muted">Aktueller Kontostand zum Zeitpunkt der Einrichtung</small>
                         </div>
 
                         <div class="form-group">
                             <label>Dispogrenze</label>
-                            <input type="number" step="0.01" name="konto_grenze" class="form-control" value="0.00" required>
+                            <input type="number" step="0.01" class="form-control" name="konto_grenze" value="0" required>
+                            <small class="form-text text-muted">Betrag, um den das Konto überzogen werden kann</small>
                         </div>
 
                         <div class="text-center">
-                            <button type="submit" class="btn btn-primary">Hinzufügen</button>
+                            <button type="submit" class="btn btn-success">Konto hinzufügen</button>
                         </div>
                     </form>
                 </div>
             </div>
 
-            <!-- Konto bearbeiten (hidden) -->
-            <div class="card" id="editKontoCard" style="display:none;">
+            <!-- Edit Konto -->
+            <div class="card edit-card" id="editKontoCard">
                 <div class="card-header">
                     <h5 class="card-title">Konto bearbeiten</h5>
                 </div>
                 <div class="card-body">
-                    <form method="POST" action="config.php" id="editKontoForm">
-                        <input type="hidden" name="manId" value="<?= (int)$mandant ?>">
+                    <form method="POST" action="config.php">
+                        <input type="hidden" name="manId" value="<?=$mandant?>">
                         <input type="hidden" name="action" value="edit_konto">
                         <input type="hidden" name="konto_id" id="edit_konto_id">
 
                         <div class="form-group">
-                            <label>Konto-Bezeichnung</label>
-                            <input type="text" name="konto_bez" id="edit_konto_bez" class="form-control" required>
+                            <label>Kontobezeichnung</label>
+                            <input type="text" class="form-control" name="konto_bez" id="edit_konto_bez" required>
                         </div>
 
                         <div class="form-group">
                             <label>Dispogrenze</label>
-                            <input type="number" step="0.01" name="konto_grenze" id="edit_konto_grenze" class="form-control" required>
+                            <input type="number" step="0.01" class="form-control" name="konto_grenze" id="edit_konto_grenze" required>
+                        </div>
+
+                        <div class="alert alert-info">
+                            ℹ️ Der Anfangsbestand kann nicht geändert werden, da dies die Finanzhistorie verfälschen würde.
                         </div>
 
                         <div class="text-center">
@@ -638,30 +628,23 @@ $intervalle = [
                             <tr>
                                 <th>Beschreibung</th>
                                 <th>Betrag</th>
+                                <th>Intervall</th>
                                 <th>Konto</th>
                                 <th>Kategorie</th>
-                                <th>Intervall</th>
                                 <th>Aktionen</th>
                             </tr>
                             </thead>
                             <tbody>
                             <?php foreach ($laufendes as $row): ?>
-                                <?php
-                                $mod = (int)($row["modulo"] ?? 1);
-                                $intervall = $intervalle[$mod] ?? ($mod . " Tage");
-                                ?>
+                                <?php $mod = (int)($row["modulo"] ?? 1); ?>
                                 <tr>
-                                    <td><?= h($row["Beschreibung"]) ?></td>
-                                    <td><?= number_format((float)$row["Wert"], 2, ',', '.') ?> €</td>
-                                    <td><?= h($row["KontoBez"] ?? ("#" . (int)$row["ktoID"])) ?></td>
-                                    <td><?= h($row["KatBez"] ?? ("#" . (int)$row["katID"])) ?></td>
-                                    <td><?= h($intervall) ?></td>
+                                    <td><?=h($row["Beschreibung"])?></td>
+                                    <td><?=number_format((float)$row["Wert"], 2, ',', '.')?> €</td>
+                                    <td><?=h($intervalle[$mod] ?? ($mod." Monate"))?></td>
+                                    <td><?=h($row["KontoBez"] ?? "")?></td>
+                                    <td><?=h($row["KatBez"] ?? "")?></td>
                                     <td>
-                                        <div class="action-buttons">
-                                            <button class="btn btn-sm btn-outline-danger" onclick="deleteLaufend(<?= (int)$row['id'] ?>)">
-                                                Löschen
-                                            </button>
-                                        </div>
+                                        <button class="btn btn-sm btn-danger" onclick="deleteLaufend(<?= (int)$row['id']?>)">Löschen</button>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>
@@ -674,30 +657,40 @@ $intervalle = [
                 </div>
             </div>
 
-            <!-- Laufende Kosten hinzufügen -->
+            <!-- Neue laufende Kosten -->
             <div class="card">
                 <div class="card-header">
-                    <h5 class="card-title">Laufende Kosten hinzufügen</h5>
+                    <h5 class="card-title">Neue laufende Kosten hinzufügen</h5>
                 </div>
                 <div class="card-body">
                     <form method="POST" action="config.php">
-                        <input type="hidden" name="manId" value="<?= (int)$mandant ?>">
+                        <input type="hidden" name="manId" value="<?=$mandant?>">
                         <input type="hidden" name="action" value="add_laufend">
 
                         <div class="form-group">
                             <label>Beschreibung</label>
-                            <input type="text" name="laufend_beschreibung" class="form-control" required>
+                            <input type="text" class="form-control" name="laufend_beschreibung" placeholder="z.B. Netflix Abo" required>
                         </div>
 
                         <div class="form-group">
                             <label>Betrag</label>
-                            <input type="number" step="0.01" name="laufend_wert" class="form-control" required>
+                            <input type="number" step="0.01" class="form-control" name="laufend_wert" placeholder="0.00" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Intervall (in Monaten)</label>
+                            <select class="form-control" name="laufend_modulo" required>
+                                <?php foreach ($intervalle as $val => $label): ?>
+                                    <option value="<?=$val?>" <?=$val===1?'selected':''?>><?=h($label)?></option>
+                                <?php endforeach; ?>
+                            </select>
+                            <small class="form-text text-muted">Das Cronjob-Script läuft am Monatsersten</small>
                         </div>
 
                         <div class="form-group">
                             <label>Konto</label>
-                            <select name="laufend_konto" class="form-control" required>
-                                <option value="">Bitte wählen...</option>
+                            <select class="form-control" name="laufend_konto" required>
+                                <option value="">Bitte wählen…</option>
                                 <?php foreach ($konten as $k): ?>
                                     <option value="<?= (int)$k["id"] ?>"><?= h($k["Bez"]) ?></option>
                                 <?php endforeach; ?>
@@ -706,25 +699,20 @@ $intervalle = [
 
                         <div class="form-group">
                             <label>Kategorie</label>
-                            <select name="laufend_kategorie" class="form-control" required>
-                                <option value="">Bitte wählen...</option>
+                            <select class="form-control" name="laufend_kategorie" required>
+                                <option value="">Bitte wählen…</option>
                                 <?php foreach ($kategorien as $ka): ?>
                                     <option value="<?= (int)$ka["ID"] ?>"><?= h($ka["bez"]) ?></option>
                                 <?php endforeach; ?>
                             </select>
                         </div>
 
-                        <div class="form-group">
-                            <label>Intervall</label>
-                            <select name="laufend_modulo" class="form-control" required>
-                                <?php foreach ($intervalle as $val => $label): ?>
-                                    <option value="<?= (int)$val ?>"><?= h($label) ?></option>
-                                <?php endforeach; ?>
-                            </select>
+                        <div class="alert alert-info">
+                            ℹ️ <strong>Hinweis:</strong> Laufende Kosten werden automatisch am Monatsersten gebucht.
                         </div>
 
                         <div class="text-center">
-                            <button type="submit" class="btn btn-primary">Hinzufügen</button>
+                            <button type="submit" class="btn btn-success">Laufende Kosten hinzufügen</button>
                         </div>
                     </form>
                 </div>
@@ -734,155 +722,168 @@ $intervalle = [
     </div><!-- /.tab-content -->
 </div><!-- /.container -->
 
-<script src="https://code.jquery.com/jquery-3.4.1.min.js"
-        integrity="sha384-vk5WoKIiMzZ6I0X58F3RDeo63eFUsVTNff7kwh28ykVZCEN0N7LxyzKk5X7xL7sA"
-        crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"
-        integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo"
-        crossorigin="anonymous"></script>
-<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"
-        integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6"
-        crossorigin="anonymous"></script>
+<!-- Bootstrap JS (optional). Wenn das geblockt ist, greift der Fallback darunter. -->
+<script src="https://code.jquery.com/jquery-3.4.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
 
 <script>
-    // --- Farbe -> RGB Hidden Inputs (Add) ---
-    (function initColorpickerAdd() {
-        const cp = document.getElementById('colorpicker');
-        if (!cp) return;
+/* ====== Farbpicker -> RGB Hidden Inputs (nur wenn Elemente existieren) ====== */
+(function () {
+    const cp = document.getElementById('colorpicker');
+    const r = document.getElementById('color_r');
+    const g = document.getElementById('color_g');
+    const b = document.getElementById('color_b');
+    if (cp && r && g && b) {
         cp.addEventListener('input', function(e) {
             const hex = e.target.value;
-            const r = parseInt(hex.substr(1,2), 16);
-            const g = parseInt(hex.substr(3,2), 16);
-            const b = parseInt(hex.substr(5,2), 16);
-            document.getElementById('color_r').value = r;
-            document.getElementById('color_g').value = g;
-            document.getElementById('color_b').value = b;
+            r.value = parseInt(hex.substr(1,2), 16);
+            g.value = parseInt(hex.substr(3,2), 16);
+            b.value = parseInt(hex.substr(5,2), 16);
         });
-        // initial set
         cp.dispatchEvent(new Event('input'));
-    })();
+    }
 
-    // --- Farbe -> RGB Hidden Inputs (Edit Kategorie) ---
-    (function initColorpickerEditKat() {
-        const cp = document.getElementById('edit_kat_colorpicker');
-        if (!cp) return;
-        cp.addEventListener('input', function(e) {
+    const ecp = document.getElementById('edit_kat_colorpicker');
+    if (ecp) {
+        ecp.addEventListener('input', function(e) {
             const hex = e.target.value;
-            const r = parseInt(hex.substr(1,2), 16);
-            const g = parseInt(hex.substr(3,2), 16);
-            const b = parseInt(hex.substr(5,2), 16);
-            document.getElementById('edit_kat_color_r').value = r;
-            document.getElementById('edit_kat_color_g').value = g;
-            document.getElementById('edit_kat_color_b').value = b;
+            const rr = document.getElementById('edit_kat_color_r');
+            const gg = document.getElementById('edit_kat_color_g');
+            const bb = document.getElementById('edit_kat_color_b');
+            if (!rr || !gg || !bb) return;
+            rr.value = parseInt(hex.substr(1,2), 16);
+            gg.value = parseInt(hex.substr(3,2), 16);
+            bb.value = parseInt(hex.substr(5,2), 16);
         });
-    })();
+    }
+})();
 
-    function rgbToHex(r, g, b) {
-        const toHex = (n) => ('0' + Number(n).toString(16)).slice(-2);
-        return '#' + toHex(r) + toHex(g) + toHex(b);
+function rgbToHex(r,g,b){
+    const toHex = n => ('0' + Number(n).toString(16)).slice(-2);
+    return '#' + toHex(r) + toHex(g) + toHex(b);
+}
+
+/* ====== CRUD-Helper-Forms ====== */
+function postForm(fields) {
+    const f = document.createElement('form');
+    f.method = 'POST';
+    f.action = 'config.php';
+    Object.keys(fields).forEach(k => {
+        const i = document.createElement('input');
+        i.type = 'hidden';
+        i.name = k;
+        i.value = fields[k];
+        f.appendChild(i);
+    });
+    document.body.appendChild(f);
+    f.submit();
+}
+
+/* Kategorien */
+function editKategorie(id, bez, sortorder, r, g, b) {
+    document.getElementById('edit_kat_id').value = id;
+    document.getElementById('edit_kat_bez').value = bez;
+    document.getElementById('edit_kat_sortorder').value = sortorder;
+
+    document.getElementById('edit_kat_color_r').value = r;
+    document.getElementById('edit_kat_color_g').value = g;
+    document.getElementById('edit_kat_color_b').value = b;
+
+    const cp = document.getElementById('edit_kat_colorpicker');
+    if (cp) cp.value = rgbToHex(r,g,b);
+
+    const card = document.getElementById('editKategorieCard');
+    if (card) { card.style.display = 'block'; card.scrollIntoView({behavior:'smooth'}); }
+}
+function cancelEditKategorie() {
+    const card = document.getElementById('editKategorieCard');
+    if (card) card.style.display = 'none';
+}
+function deleteKategorie(id) {
+    if (!confirm('Kategorie wirklich löschen?')) return;
+    postForm({ manId: <?= (int)$mandant ?>, action: 'delete_kategorie', id: id });
+}
+
+/* Konten */
+function editKonto(id, bez, grenze) {
+    document.getElementById('edit_konto_id').value = id;
+    document.getElementById('edit_konto_bez').value = bez;
+    document.getElementById('edit_konto_grenze').value = grenze;
+
+    const card = document.getElementById('editKontoCard');
+    if (card) { card.style.display = 'block'; card.scrollIntoView({behavior:'smooth'}); }
+}
+function cancelEditKonto() {
+    const card = document.getElementById('editKontoCard');
+    if (card) card.style.display = 'none';
+}
+function deleteKonto(id) {
+    if (!confirm('Konto wirklich löschen? Alle zugehörigen Initialwerte werden ebenfalls gelöscht!')) return;
+    postForm({ manId: <?= (int)$mandant ?>, action: 'delete_konto', konto_id: id });
+}
+
+/* Laufende Kosten */
+function deleteLaufend(id) {
+    if (!confirm('Laufende Kosten wirklich löschen?')) return;
+    postForm({ manId: <?= (int)$mandant ?>, action: 'delete_laufend', laufend_id: id });
+}
+
+/* ====== Tabs: Bootstrap wenn verfügbar, sonst Fallback ====== */
+(function () {
+    const hasBootstrapTabs = (window.jQuery && typeof jQuery.fn.tab === 'function');
+
+    function setActiveTab(hash) {
+        if (!hash) hash = '#kategorien';
+        const links = document.querySelectorAll('#configTabs a.nav-link');
+        const panes = document.querySelectorAll('#configTabsContent .tab-pane');
+
+        links.forEach(a => {
+            const isActive = (a.getAttribute('href') === hash);
+            a.classList.toggle('active', isActive);
+            a.setAttribute('aria-selected', isActive ? 'true' : 'false');
+        });
+
+        panes.forEach(p => {
+            const isActive = ('#' + p.id === hash);
+            p.classList.toggle('show', isActive);
+            p.classList.toggle('active', isActive);
+        });
     }
 
-    // --- Kategorien Edit ---
-    function startEditKategorie(id, bez, sortorder, r, g, b) {
-        document.getElementById('edit_kat_id').value = id;
-        document.getElementById('edit_kat_bez').value = bez;
-        document.getElementById('edit_kat_sortorder').value = sortorder;
+    // Initial: hash oder default
+    const initialHash = window.location.hash || '#kategorien';
 
-        document.getElementById('edit_kat_color_r').value = r;
-        document.getElementById('edit_kat_color_g').value = g;
-        document.getElementById('edit_kat_color_b').value = b;
-
-        const hex = rgbToHex(r, g, b);
-        document.getElementById('edit_kat_colorpicker').value = hex;
-        document.getElementById('editKategorieCard').style.display = 'block';
-        document.getElementById('editKategorieCard').scrollIntoView({ behavior: 'smooth' });
-    }
-
-    function cancelEditKategorie() {
-        document.getElementById('editKategorieCard').style.display = 'none';
-        document.getElementById('editKategorieForm').reset();
-    }
-
-    function deleteKategorie(id) {
-        if (!confirm('Kategorie wirklich löschen?')) return;
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = 'config.php';
-
-        form.appendChild(hidden('manId', <?= (int)$mandant ?>));
-        form.appendChild(hidden('action', 'delete_kategorie'));
-        form.appendChild(hidden('id', id));
-
-        document.body.appendChild(form);
-        form.submit();
-    }
-
-    // --- Konten Edit ---
-    function startEditKonto(id, bez, grenze) {
-        document.getElementById('edit_konto_id').value = id;
-        document.getElementById('edit_konto_bez').value = bez;
-        document.getElementById('edit_konto_grenze').value = grenze;
-
-        document.getElementById('editKontoCard').style.display = 'block';
-        document.getElementById('editKontoCard').scrollIntoView({ behavior: 'smooth' });
-    }
-
-    function cancelEditKonto() {
-        document.getElementById('editKontoCard').style.display = 'none';
-        document.getElementById('editKontoForm').reset();
-    }
-
-    function deleteKonto(id) {
-        if (!confirm('Konto wirklich löschen?')) return;
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = 'config.php';
-
-        form.appendChild(hidden('manId', <?= (int)$mandant ?>));
-        form.appendChild(hidden('action', 'delete_konto'));
-        form.appendChild(hidden('konto_id', id));
-
-        document.body.appendChild(form);
-        form.submit();
-    }
-
-    // --- Laufendes ---
-    function deleteLaufend(id) {
-        if (!confirm('Laufende Kosten wirklich löschen?')) return;
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = 'config.php';
-
-        form.appendChild(hidden('manId', <?= (int)$mandant ?>));
-        form.appendChild(hidden('action', 'delete_laufend'));
-        form.appendChild(hidden('laufend_id', id));
-
-        document.body.appendChild(form);
-        form.submit();
-    }
-
-    function hidden(name, value) {
-        const input = document.createElement('input');
-        input.type = 'hidden';
-        input.name = name;
-        input.value = value;
-        return input;
-    }
-
-    // --- Tab per URL-Hash öffnen (optional, macht UX besser) ---
-    (function syncTabsWithHash() {
-        function activateFromHash() {
-            const hash = window.location.hash;
-            if (!hash) return;
-            const $link = $('a[data-toggle="tab"][href="' + hash + '"]');
-            if ($link.length) $link.tab('show');
-        }
-        $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
-            const target = $(e.target).attr('href');
+    if (hasBootstrapTabs) {
+        // Bootstrap-Tab aktivieren + Hash synchron halten
+        jQuery('#configTabs a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+            const target = jQuery(e.target).attr('href');
             if (target) history.replaceState(null, '', target);
         });
-        activateFromHash();
-    })();
+
+        // Beim Laden: falls Hash gesetzt, zeigen
+        const $link = jQuery('#configTabs a[data-toggle="tab"][href="' + initialHash + '"]');
+        if ($link.length) $link.tab('show');
+    } else {
+        // Fallback: komplett ohne Bootstrap JS
+        setActiveTab(initialHash);
+
+        document.querySelectorAll('#configTabs a.nav-link').forEach(a => {
+            a.addEventListener('click', function (e) {
+                const href = a.getAttribute('href');
+                if (!href || !href.startsWith('#')) return;
+                e.preventDefault();
+                history.replaceState(null, '', href);
+                setActiveTab(href);
+            });
+        });
+
+        window.addEventListener('hashchange', function() {
+            setActiveTab(window.location.hash);
+        });
+    }
+})();
 </script>
+
 </body>
 </html>
