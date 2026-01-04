@@ -1093,24 +1093,28 @@ function deleteLaufend(id) {
                             </thead>
                             <tbody>
                                 <?php
-                                $query = "SELECT k.id, k.Bez, k.Grenze, i.Betrag
+                                $query_konten = "SELECT k.id, k.Bez, k.Grenze, i.Betrag
                                           FROM Konten k
                                           LEFT JOIN Initialwerte i ON k.id = i.KtoId
                                           WHERE k.manId = $mandant";
-                                $result = mysqli_query($GLOBALS["___mysqli_ston"], $query);
+                                $result_konten = mysqli_query($GLOBALS["___mysqli_ston"], $query_konten);
 
-                                while($row = mysqli_fetch_assoc($result)) {
-                                    echo("<tr>");
-                                    echo("<td>".$row["Bez"]."</td>");
-                                    echo("<td>".number_format($row["Betrag"] ? $row["Betrag"] : 0, 2, ',', '.')." €</td>");
-                                    echo("<td>".number_format($row["Grenze"], 2, ',', '.')." €</td>");
-                                    echo("<td>");
-                                    echo("<div class=\"action-buttons\">");
-                                    echo("<button class=\"btn btn-sm btn-primary\" onclick=\"editKonto(".$row["id"].", '".addslashes($row["Bez"])."', ".$row["Grenze"].")\">Bearbeiten</button>");
-                                    echo("<button class=\"btn btn-sm btn-danger\" onclick=\"deleteKonto(".$row["id"].")\">Löschen</button>");
-                                    echo("</div>");
-                                    echo("</td>");
-                                    echo("</tr>");
+                                if($result_konten && mysqli_num_rows($result_konten) > 0) {
+                                    while($row = mysqli_fetch_assoc($result_konten)) {
+                                        echo("<tr>");
+                                        echo("<td>".htmlspecialchars($row["Bez"])."</td>");
+                                        echo("<td>".number_format($row["Betrag"] ? $row["Betrag"] : 0, 2, ',', '.')." €</td>");
+                                        echo("<td>".number_format($row["Grenze"], 2, ',', '.')." €</td>");
+                                        echo("<td>");
+                                        echo("<div class=\"action-buttons\">");
+                                        echo("<button class=\"btn btn-sm btn-primary\" onclick=\"editKonto(".$row["id"].", '".htmlspecialchars($row["Bez"], ENT_QUOTES)."', ".$row["Grenze"].")\">Bearbeiten</button>");
+                                        echo("<button class=\"btn btn-sm btn-danger\" onclick=\"deleteKonto(".$row["id"].")\">Löschen</button>");
+                                        echo("</div>");
+                                        echo("</td>");
+                                        echo("</tr>");
+                                    }
+                                } else {
+                                    echo("<tr><td colspan=\"4\" class=\"text-center\">Noch keine Konten angelegt</td></tr>");
                                 }
                                 ?>
                             </tbody>
@@ -1118,4 +1122,72 @@ function deleteLaufend(id) {
                     </div>
                 </div>
             </div>
+
+            <!-- Neues Konto -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">Neues Konto hinzufügen</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="config.php">
+                        <input type="hidden" name="manId" value="<?php echo $mandant; ?>">
+                        <input type="hidden" name="action" value="add_konto">
+
+                        <div class="form-group">
+                            <label>Kontobezeichnung</label>
+                            <input type="text" class="form-control" name="konto_bez" placeholder="z.B. Girokonto" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Anfangsbestand</label>
+                            <input type="number" step="0.01" class="form-control" name="konto_initial" placeholder="0.00" required>
+                            <small class="form-text text-muted">Aktueller Kontostand zum Zeitpunkt der Einrichtung</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Dispogrenze</label>
+                            <input type="number" step="0.01" class="form-control" name="konto_grenze" value="0" required>
+                            <small class="form-text text-muted">Betrag, um den das Konto überzogen werden kann</small>
+                        </div>
+
+                        <div class="text-center">
+                            <button type="submit" class="btn btn-success">Konto hinzufügen</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Edit Konto -->
+            <div class="card edit-card" id="editKontoCard">
+                <div class="card-header">
+                    <h5 class="card-title">Konto bearbeiten</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="config.php">
+                        <input type="hidden" name="manId" value="<?php echo $mandant; ?>">
+                        <input type="hidden" name="action" value="edit_konto">
+                        <input type="hidden" name="konto_id" id="edit_konto_id">
+
+                        <div class="form-group">
+                            <label>Kontobezeichnung</label>
+                            <input type="text" class="form-control" name="konto_bez" id="edit_konto_bez" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Dispogrenze</label>
+                            <input type="number" step="0.01" class="form-control" name="konto_grenze" id="edit_konto_grenze" required>
+                        </div>
+
+                        <div class="alert alert-info">
+                            ℹ️ Der Anfangsbestand kann nicht geändert werden, da dies die Finanzhistorie verfälschen würde.
+                        </div>
+
+                        <div class="text-center">
+                            <button type="submit" class="btn btn-primary">Speichern</button>
+                            <button type="button" class="btn btn-secondary" onclick="cancelEditKonto()">Abbrechen</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
                                 ?>
