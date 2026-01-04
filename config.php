@@ -1072,7 +1072,7 @@ function deleteLaufend(id) {
                 </div>
             </div>
         </div>
-
+</div>
         <!-- ========== TAB: KONTEN ========== -->
         <div class="tab-pane fade" id="konten" role="tabpanel">
             <!-- Bestehende Konten -->
