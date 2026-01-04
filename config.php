@@ -22,6 +22,20 @@ $error_message = "";
 // -------------------- ACTIONS --------------------
 $action = $_POST["action"] ?? "";
 
+/* Helper: Mandanten-Sicherheit prüfen */
+function konto_gehoert_mandant(mysqli $db, int $ktoId, int $manId): bool {
+    $q = "SELECT COUNT(*) AS cnt FROM Konten WHERE id = $ktoId AND manId = $manId";
+    $r = mysqli_query($db, $q);
+    $row = $r ? mysqli_fetch_assoc($r) : ["cnt" => 0];
+    return ((int)$row["cnt"] > 0);
+}
+function kategorie_gehoert_mandant_oder_global(mysqli $db, int $katId, int $manId): bool {
+    $q = "SELECT COUNT(*) AS cnt FROM kategorien WHERE ID = $katId AND (manId = $manId OR manId = 0)";
+    $r = mysqli_query($db, $q);
+    $row = $r ? mysqli_fetch_assoc($r) : ["cnt" => 0];
+    return ((int)$row["cnt"] > 0);
+}
+
 // ========== KATEGORIEN ==========
 if ($action === "add_kategorie") {
     $bez = mysqli_real_escape_string($db, trim($_POST["bez"] ?? ""));
@@ -154,6 +168,10 @@ if ($action === "add_laufend") {
 
     if ($beschreibung === "" || $wert == 0.0 || $ktoID <= 0 || $katID <= 0) {
         $error_message = "❌ Bitte alle Felder korrekt ausfüllen.";
+    } elseif (!konto_gehoert_mandant($db, $ktoID, $mandant)) {
+        $error_message = "❌ Ungültiges Konto (gehört nicht zu diesem Mandanten).";
+    } elseif (!kategorie_gehoert_mandant_oder_global($db, $katID, $mandant)) {
+        $error_message = "❌ Ungültige Kategorie (gehört nicht zu diesem Mandanten / global).";
     } else {
         $res = mysqli_query($db, "SELECT MAX(id) AS maxid FROM laufendes");
         $row = $res ? mysqli_fetch_assoc($res) : ["maxid" => 0];
@@ -163,6 +181,36 @@ if ($action === "add_laufend") {
                 VALUES ($new_id, $wert, $ktoID, $katID, $modulo, '$beschreibung', $mandant)";
         if (!mysqli_query($db, $sql)) $error_message = "❌ Fehler beim Speichern: ".mysqli_error($db);
         else $success_message = "✅ Laufende Kosten erfolgreich hinzugefügt!";
+    }
+}
+
+if ($action === "edit_laufend") {
+    $id = (int)($_POST["laufend_id"] ?? 0);
+    $beschreibung = mysqli_real_escape_string($db, trim($_POST["laufend_beschreibung"] ?? ""));
+    $wert = (float)($_POST["laufend_wert"] ?? 0);
+    $modulo = (int)($_POST["laufend_modulo"] ?? 1);
+    $ktoID = (int)($_POST["laufend_konto"] ?? 0);
+    $katID = (int)($_POST["laufend_kategorie"] ?? 0);
+
+    if ($id <= 0 || $beschreibung === "" || $wert == 0.0 || $ktoID <= 0 || $katID <= 0) {
+        $error_message = "❌ Bitte alle Felder korrekt ausfüllen.";
+    } elseif (!konto_gehoert_mandant($db, $ktoID, $mandant)) {
+        $error_message = "❌ Ungültiges Konto (gehört nicht zu diesem Mandanten).";
+    } elseif (!kategorie_gehoert_mandant_oder_global($db, $katID, $mandant)) {
+        $error_message = "❌ Ungültige Kategorie (gehört nicht zu diesem Mandanten / global).";
+    } else {
+        // Sicherstellen: Datensatz gehört zum Mandanten
+        $check = mysqli_query($db, "SELECT COUNT(*) AS cnt FROM laufendes WHERE id=$id AND manId=$mandant");
+        $row = $check ? mysqli_fetch_assoc($check) : ["cnt" => 0];
+        if ((int)$row["cnt"] <= 0) {
+            $error_message = "❌ Ungültige laufende Kosten-ID (nicht dein Mandant).";
+        } else {
+            $sql = "UPDATE laufendes
+                    SET Wert = $wert, ktoID = $ktoID, katID = $katID, modulo = $modulo, Beschreibung = '$beschreibung'
+                    WHERE id = $id AND manId = $mandant";
+            if (!mysqli_query($db, $sql)) $error_message = "❌ Fehler beim Aktualisieren: ".mysqli_error($db);
+            else $success_message = "✅ Laufende Kosten erfolgreich aktualisiert!";
+        }
     }
 }
 
@@ -197,11 +245,12 @@ $r = mysqli_query($db, $q);
 while ($r && ($row = mysqli_fetch_assoc($r))) $konten[] = $row;
 
 $laufendes = [];
-$q = "SELECT l.id, l.Wert, l.modulo, l.Beschreibung,
+// Join abgesichert: Konto MUSS Mandant, Kategorie darf Mandant oder global
+$q = "SELECT l.id, l.Wert, l.modulo, l.Beschreibung, l.ktoID, l.katID,
              k.Bez AS KontoBez, kat.bez AS KatBez
       FROM laufendes l
-      LEFT JOIN Konten k ON l.ktoID = k.id
-      LEFT JOIN kategorien kat ON l.katID = kat.ID
+      LEFT JOIN Konten k ON l.ktoID = k.id AND k.manId = l.manId
+      LEFT JOIN kategorien kat ON l.katID = kat.ID AND (kat.manId = l.manId OR kat.manId = 0)
       WHERE l.manId = $mandant
       ORDER BY l.Beschreibung";
 $r = mysqli_query($db, $q);
@@ -215,6 +264,13 @@ $intervalle = [
     6  => "Halbjährlich (alle 6 Monate)",
     12 => "Jährlich (alle 12 Monate)"
 ];
+
+// Summe laufende Kosten: nur positive Beträge (Ausgaben)
+$summe_laufend_pos = 0.0;
+foreach ($laufendes as $l) {
+    $w = (float)($l["Wert"] ?? 0);
+    if ($w > 0) $summe_laufend_pos += $w;
+}
 ?>
 <!DOCTYPE html>
 <html lang="de">
@@ -228,16 +284,13 @@ $intervalle = [
     <link rel="icon" href="http://192.168.5.103/cashview/favicon.ico" type="image/ico">
 
     <style>
-        /* Mobile First Styles */
         body { font-size: 14px; padding: 0; margin: 0; }
         .container { padding-left: 10px; padding-right: 10px; }
 
-        /* Navigation */
         .navbar { padding: 0.5rem 1rem; flex-wrap: wrap; }
         .navbar-brand { font-size: 1.1rem; margin-right: auto; }
         .btn-back { font-size: 0.85rem; padding: 0.4rem 0.8rem; }
 
-        /* Tabs */
         .nav-tabs { margin-bottom: 1.5rem; border-bottom: 2px solid #dee2e6; }
         .nav-tabs .nav-link {
             color: #495057;
@@ -252,45 +305,50 @@ $intervalle = [
             background: transparent;
         }
 
-        /* Cards */
         .card { margin-bottom: 1rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         .card-header { padding: 0.75rem 1rem; background-color: #f8f9fa; }
         .card-title { font-size: 1.1rem; margin-bottom: 0.25rem; }
         .card-subtitle { font-size: 0.85rem; }
         .card-body { padding: 1rem; }
 
-        /* Color Preview */
         .color-preview {
             width: 30px; height: 30px; border: 2px solid #ccc; display: inline-block;
             vertical-align: middle; margin-right: 10px; border-radius: 4px;
         }
 
-        /* Tabelle responsive */
         .table-responsive { font-size: 0.85rem; overflow-x: auto; -webkit-overflow-scrolling: touch; }
         .table { margin-bottom: 0; }
         .table td, .table th { padding: 0.75rem; vertical-align: middle; }
 
-        /* Action Buttons */
         .action-buttons { display: flex; gap: 0.5rem; flex-wrap: wrap; }
         .action-buttons .btn { font-size: 0.8rem; padding: 0.4rem 0.8rem; }
 
-        /* Formular */
         .form-group { margin-bottom: 1rem; }
         .form-group label { font-weight: 600; margin-bottom: 0.5rem; }
         .form-control { font-size: 1rem; }
         input[type="color"] { height: 50px; cursor: pointer; }
 
-        /* Alerts */
         .alert { border-radius: 8px; border: none; padding: 1rem 1.5rem; margin-bottom: 1.5rem; }
 
-        /* Buttons */
         .btn-primary, .btn-success { width: 100%; padding: 0.75rem; font-size: 1rem; font-weight: 600; }
         .btn-secondary { width: 100%; padding: 0.75rem; margin-top: 0.5rem; }
 
-        /* Edit Cards versteckt */
         .edit-card { display: none; }
 
-        /* iPad / Desktop */
+        /* Einnahmen in grün */
+        .income { color: #28a745; font-weight: 600; }
+
+        /* Summe-Box am Ende */
+        .sum-box {
+            margin: 2rem 0 1rem 0;
+            padding: 1rem 1.25rem;
+            border-radius: 10px;
+            background: #f8f9fa;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
+        .sum-title { font-weight: 700; margin-bottom: 0.25rem; }
+        .sum-value { font-size: 1.4rem; font-weight: 800; }
+
         @media (min-width: 768px) {
             body { font-size: 16px; }
             .container { max-width: 760px; padding-left: 20px; padding-right: 20px; }
@@ -311,14 +369,13 @@ $intervalle = [
             .action-buttons .btn { font-size: 0.9rem; padding: 0.5rem 1rem; }
         }
 
-        /* Touch */
         @media (hover: none) and (pointer: coarse) {
             .btn { min-height: 44px; min-width: 44px; }
             .form-control { min-height: 44px; }
             .card { margin-bottom: 1.2rem; }
         }
 
-        /* Dark Mode (wie vorher) */
+        /* Dark Mode */
         @media (prefers-color-scheme: dark) {
             body { background-color: #121212; color: #ffffff; }
             .card { background-color: #1e1e1e; border-color: #333; }
@@ -340,6 +397,8 @@ $intervalle = [
             .nav-tabs { border-bottom-color: #444; }
             .nav-tabs .nav-link { color: #aaaaaa; }
             .nav-tabs .nav-link.active { color: #667eea; }
+
+            .sum-box { background: #1e1e1e; box-shadow: 0 1px 3px rgba(0,0,0,0.35); }
         }
     </style>
 </head>
@@ -358,7 +417,6 @@ $intervalle = [
         <div class="alert alert-danger"><?=$error_message?></div>
     <?php endif; ?>
 
-    <!-- Tabs -->
     <ul class="nav nav-tabs" id="configTabs" role="tablist">
         <li class="nav-item">
             <a class="nav-link active" id="kategorien-tab" data-toggle="tab" href="#kategorien" role="tab">📁 Kategorien</a>
@@ -371,7 +429,6 @@ $intervalle = [
         </li>
     </ul>
 
-    <!-- WICHTIG: Tab-Panes sind Geschwister (Tab-Bug-Fix) -->
     <div class="tab-content" id="configTabsContent">
 
         <!-- ========== TAB: KATEGORIEN ========== -->
@@ -396,10 +453,10 @@ $intervalle = [
                             <?php foreach ($kategorien as $row): ?>
                                 <?php
                                 $color = explode(",", (string)$row["statscolor"]);
-                                $r = (int)($color[0] ?? 100);
-                                $g = (int)($color[1] ?? 100);
-                                $b = (int)($color[2] ?? 255);
-                                $rgb = "rgb($r,$g,$b)";
+                                $rr = (int)($color[0] ?? 100);
+                                $gg = (int)($color[1] ?? 100);
+                                $bb = (int)($color[2] ?? 255);
+                                $rgb = "rgb($rr,$gg,$bb)";
                                 $is_own = ((int)$row["manId"] === $mandant);
                                 ?>
                                 <tr>
@@ -410,7 +467,7 @@ $intervalle = [
                                         <?php if ($is_own): ?>
                                             <div class="action-buttons">
                                                 <button class="btn btn-sm btn-primary"
-                                                        onclick="editKategorie(<?= (int)$row['ID']?>,'<?= h($row['bez'])?>',<?= (int)$row['sortorder']?>,<?= $r?>,<?= $g?>,<?= $b?>)">
+                                                        onclick="editKategorie(<?= (int)$row['ID']?>,'<?= h($row['bez'])?>',<?= (int)$row['sortorder']?>,<?= $rr?>,<?= $gg?>,<?= $bb?>)">
                                                     Bearbeiten
                                                 </button>
                                                 <button class="btn btn-sm btn-danger" onclick="deleteKategorie(<?= (int)$row['ID']?>)">Löschen</button>
@@ -619,7 +676,7 @@ $intervalle = [
             <div class="card">
                 <div class="card-header">
                     <h5 class="card-title">Meine laufenden Kosten</h5>
-                    <h6 class="card-subtitle mb-2 text-muted">Wiederkehrende Ausgaben</h6>
+                    <h6 class="card-subtitle mb-2 text-muted">Wiederkehrende Ausgaben / Einnahmen</h6>
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
@@ -636,15 +693,32 @@ $intervalle = [
                             </thead>
                             <tbody>
                             <?php foreach ($laufendes as $row): ?>
-                                <?php $mod = (int)($row["modulo"] ?? 1); ?>
+                                <?php
+                                $mod = (int)($row["modulo"] ?? 1);
+                                $wert = (float)($row["Wert"] ?? 0);
+                                $isIncome = ($wert < 0);
+                                ?>
                                 <tr>
                                     <td><?=h($row["Beschreibung"])?></td>
-                                    <td><?=number_format((float)$row["Wert"], 2, ',', '.')?> €</td>
+                                    <td class="<?= $isIncome ? 'income' : '' ?>">
+                                        <?=number_format($wert, 2, ',', '.')?> €
+                                    </td>
                                     <td><?=h($intervalle[$mod] ?? ($mod." Monate"))?></td>
                                     <td><?=h($row["KontoBez"] ?? "")?></td>
                                     <td><?=h($row["KatBez"] ?? "")?></td>
                                     <td>
-                                        <button class="btn btn-sm btn-danger" onclick="deleteLaufend(<?= (int)$row['id']?>)">Löschen</button>
+                                        <div class="action-buttons">
+                                            <button class="btn btn-sm btn-primary"
+                                                onclick="editLaufend(
+                                                    <?= (int)$row['id']?>,
+                                                    '<?= h($row['Beschreibung'])?>',
+                                                    <?= (float)$wert ?>,
+                                                    <?= (int)$mod ?>,
+                                                    <?= (int)($row['ktoID'] ?? 0) ?>,
+                                                    <?= (int)($row['katID'] ?? 0) ?>
+                                                )">Bearbeiten</button>
+                                            <button class="btn btn-sm btn-danger" onclick="deleteLaufend(<?= (int)$row['id']?>)">Löschen</button>
+                                        </div>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>
@@ -654,6 +728,65 @@ $intervalle = [
                             </tbody>
                         </table>
                     </div>
+                </div>
+            </div>
+
+            <!-- Edit laufende Kosten -->
+            <div class="card edit-card" id="editLaufendCard">
+                <div class="card-header">
+                    <h5 class="card-title">Laufende Kosten bearbeiten</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="config.php" id="editLaufendForm">
+                        <input type="hidden" name="manId" value="<?=$mandant?>">
+                        <input type="hidden" name="action" value="edit_laufend">
+                        <input type="hidden" name="laufend_id" id="edit_laufend_id">
+
+                        <div class="form-group">
+                            <label>Beschreibung</label>
+                            <input type="text" class="form-control" name="laufend_beschreibung" id="edit_laufend_beschreibung" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Betrag</label>
+                            <input type="number" step="0.01" class="form-control" name="laufend_wert" id="edit_laufend_wert" required>
+                            <small class="form-text text-muted">Negative Beträge = Einnahmen (werden grün angezeigt)</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Intervall (in Monaten)</label>
+                            <select class="form-control" name="laufend_modulo" id="edit_laufend_modulo" required>
+                                <?php foreach ($intervalle as $val => $label): ?>
+                                    <option value="<?=$val?>"><?=h($label)?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Konto</label>
+                            <select class="form-control" name="laufend_konto" id="edit_laufend_konto" required>
+                                <option value="">Bitte wählen…</option>
+                                <?php foreach ($konten as $k): ?>
+                                    <option value="<?= (int)$k["id"] ?>"><?= h($k["Bez"]) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Kategorie</label>
+                            <select class="form-control" name="laufend_kategorie" id="edit_laufend_kategorie" required>
+                                <option value="">Bitte wählen…</option>
+                                <?php foreach ($kategorien as $ka): ?>
+                                    <option value="<?= (int)$ka["ID"] ?>"><?= h($ka["bez"]) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+
+                        <div class="text-center">
+                            <button type="submit" class="btn btn-primary">Speichern</button>
+                            <button type="button" class="btn btn-secondary" onclick="cancelEditLaufend()">Abbrechen</button>
+                        </div>
+                    </form>
                 </div>
             </div>
 
@@ -675,6 +808,7 @@ $intervalle = [
                         <div class="form-group">
                             <label>Betrag</label>
                             <input type="number" step="0.01" class="form-control" name="laufend_wert" placeholder="0.00" required>
+                            <small class="form-text text-muted">Negative Beträge = Einnahmen</small>
                         </div>
 
                         <div class="form-group">
@@ -720,15 +854,23 @@ $intervalle = [
         </div>
 
     </div><!-- /.tab-content -->
+
+    <!-- Ganz am Ende der Seite: Summe laufender Kosten (nur Ausgaben) -->
+    <div class="sum-box">
+        <div class="sum-title">Summe laufende Kosten (nur Ausgaben, ohne Einnahmen)</div>
+        <div class="sum-value"><?= number_format($summe_laufend_pos, 2, ',', '.') ?> €</div>
+        <div class="text-muted">Negative Beträge (Einnahmen) werden nicht mitgerechnet.</div>
+    </div>
+
 </div><!-- /.container -->
 
-<!-- Bootstrap JS (optional). Wenn das geblockt ist, greift der Fallback darunter. -->
+<!-- Bootstrap JS (optional). Wenn geblockt, greift der Fallback darunter. -->
 <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script>
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
 
 <script>
-/* ====== Farbpicker -> RGB Hidden Inputs (nur wenn Elemente existieren) ====== */
+/* ====== Farbpicker -> RGB Hidden Inputs ====== */
 (function () {
     const cp = document.getElementById('colorpicker');
     const r = document.getElementById('color_r');
@@ -764,7 +906,6 @@ function rgbToHex(r,g,b){
     return '#' + toHex(r) + toHex(g) + toHex(b);
 }
 
-/* ====== CRUD-Helper-Forms ====== */
 function postForm(fields) {
     const f = document.createElement('form');
     f.method = 'POST';
@@ -824,6 +965,23 @@ function deleteKonto(id) {
 }
 
 /* Laufende Kosten */
+function editLaufend(id, beschreibung, wert, modulo, ktoID, katID) {
+    document.getElementById('edit_laufend_id').value = id;
+    document.getElementById('edit_laufend_beschreibung').value = beschreibung;
+    document.getElementById('edit_laufend_wert').value = wert;
+    document.getElementById('edit_laufend_modulo').value = String(modulo);
+
+    // Selects setzen
+    document.getElementById('edit_laufend_konto').value = String(ktoID);
+    document.getElementById('edit_laufend_kategorie').value = String(katID);
+
+    const card = document.getElementById('editLaufendCard');
+    if (card) { card.style.display = 'block'; card.scrollIntoView({behavior:'smooth'}); }
+}
+function cancelEditLaufend() {
+    const card = document.getElementById('editLaufendCard');
+    if (card) card.style.display = 'none';
+}
 function deleteLaufend(id) {
     if (!confirm('Laufende Kosten wirklich löschen?')) return;
     postForm({ manId: <?= (int)$mandant ?>, action: 'delete_laufend', laufend_id: id });
@@ -851,23 +1009,17 @@ function deleteLaufend(id) {
         });
     }
 
-    // Initial: hash oder default
     const initialHash = window.location.hash || '#kategorien';
 
     if (hasBootstrapTabs) {
-        // Bootstrap-Tab aktivieren + Hash synchron halten
         jQuery('#configTabs a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
             const target = jQuery(e.target).attr('href');
             if (target) history.replaceState(null, '', target);
         });
-
-        // Beim Laden: falls Hash gesetzt, zeigen
         const $link = jQuery('#configTabs a[data-toggle="tab"][href="' + initialHash + '"]');
         if ($link.length) $link.tab('show');
     } else {
-        // Fallback: komplett ohne Bootstrap JS
         setActiveTab(initialHash);
-
         document.querySelectorAll('#configTabs a.nav-link').forEach(a => {
             a.addEventListener('click', function (e) {
                 const href = a.getAttribute('href');
@@ -877,7 +1029,6 @@ function deleteLaufend(id) {
                 setActiveTab(href);
             });
         });
-
         window.addEventListener('hashchange', function() {
             setActiveTab(window.location.hash);
         });
