@@ -1078,6 +1078,8 @@ function deleteLaufend(id) {
                 </div>
             </div>
         </div>
+        <!-- ENDE TAB KATEGORIEN -->
+        </div>
 
         <!-- ========== TAB: KONTEN ========== -->
         <div class="tab-pane fade" id="konten" role="tabpanel" aria-labelledby="konten-tab">
