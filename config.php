@@ -570,6 +570,9 @@ if(isset($_POST["action"]) && $_POST["action"] == "delete_laufend") {
             <a class="nav-link active" id="kategorien-tab" data-toggle="tab" href="#kategorien" role="tab" aria-controls="kategorien" aria-selected="true">📁 Kategorien</a>
         </li>
         <li class="nav-item">
+            <a class="nav-link" id="konten-tab" data-toggle="tab" href="#konten" role="tab" aria-controls="konten" aria-selected="false">💳 Konten</a>
+        </li>
+        <li class="nav-item">
             <a class="nav-link" id="laufend-tab" data-toggle="tab" href="#laufend" role="tab" aria-controls="laufend" aria-selected="false">🔄 Laufende Kosten</a>
         </li>
     </ul>
