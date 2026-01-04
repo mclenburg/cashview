@@ -336,7 +336,7 @@ foreach ($laufendes as $l) {
         .edit-card { display: none; }
 
         /* Einnahmen in grün */
-        .income { color: #28a745; font-weight: 600; }
+        .income { color: #28a745 !important; font-weight: 600; }
 
         /* Summe-Box am Ende */
         .sum-box {
