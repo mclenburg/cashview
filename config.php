@@ -843,28 +843,34 @@ if(isset($_POST["action"]) && $_POST["action"] == "delete_laufend") {
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
 
 <script>
-// Colorpicker für Kategorien
-document.getElementById('colorpicker').addEventListener('input', function(e) {
-    const hex = e.target.value;
-    const r = parseInt(hex.substr(1,2), 16);
-    const g = parseInt(hex.substr(3,2), 16);
-    const b = parseInt(hex.substr(5,2), 16);
+// Colorpicker für Kategorien - mit Existenzprüfung
+const colorpicker = document.getElementById('colorpicker');
+if (colorpicker) {
+    colorpicker.addEventListener('input', function(e) {
+        const hex = e.target.value;
+        const r = parseInt(hex.substr(1,2), 16);
+        const g = parseInt(hex.substr(3,2), 16);
+        const b = parseInt(hex.substr(5,2), 16);
 
-    document.getElementById('color_r').value = r;
-    document.getElementById('color_g').value = g;
-    document.getElementById('color_b').value = b;
-});
+        document.getElementById('color_r').value = r;
+        document.getElementById('color_g').value = g;
+        document.getElementById('color_b').value = b;
+    });
+}
 
-document.getElementById('edit_kat_colorpicker').addEventListener('input', function(e) {
-    const hex = e.target.value;
-    const r = parseInt(hex.substr(1,2), 16);
-    const g = parseInt(hex.substr(3,2), 16);
-    const b = parseInt(hex.substr(5,2), 16);
+const editColorpicker = document.getElementById('edit_kat_colorpicker');
+if (editColorpicker) {
+    editColorpicker.addEventListener('input', function(e) {
+        const hex = e.target.value;
+        const r = parseInt(hex.substr(1,2), 16);
+        const g = parseInt(hex.substr(3,2), 16);
+        const b = parseInt(hex.substr(5,2), 16);
 
-    document.getElementById('edit_kat_color_r').value = r;
-    document.getElementById('edit_kat_color_g').value = g;
-    document.getElementById('edit_kat_color_b').value = b;
-});
+        document.getElementById('edit_kat_color_r').value = r;
+        document.getElementById('edit_kat_color_g').value = g;
+        document.getElementById('edit_kat_color_b').value = b;
+    });
+}
 
 // Kategorien-Funktionen
 function editKategorie(id, bez, sortorder, r, g, b) {
