@@ -567,19 +567,19 @@ if(isset($_POST["action"]) && $_POST["action"] == "delete_laufend") {
     <!-- Tabs -->
     <ul class="nav nav-tabs" id="configTabs" role="tablist">
         <li class="nav-item">
-            <a class="nav-link active" id="kategorien-tab" data-toggle="tab" href="#kategorien" role="tab">📁 Kategorien</a>
+            <a class="nav-link active" id="kategorien-tab" data-toggle="tab" href="#kategorien" role="tab" aria-controls="kategorien" aria-selected="true">📁 Kategorien</a>
         </li>
         <li class="nav-item">
-            <a class="nav-link" id="konten-tab" data-toggle="tab" href="#konten" role="tab">💳 Konten</a>
+            <a class="nav-link" id="konten-tab" data-toggle="tab" href="#konten" role="tab" aria-controls="konten" aria-selected="false">💳 Konten</a>
         </li>
         <li class="nav-item">
-            <a class="nav-link" id="laufend-tab" data-toggle="tab" href="#laufend" role="tab">🔄 Laufende Kosten</a>
+            <a class="nav-link" id="laufend-tab" data-toggle="tab" href="#laufend" role="tab" aria-controls="laufend" aria-selected="false">🔄 Laufende Kosten</a>
         </li>
     </ul>
 
     <div class="tab-content" id="configTabsContent">
         <!-- ========== TAB: KATEGORIEN ========== -->
-        <div class="tab-pane fade show active" id="kategorien" role="tabpanel">
+        <div class="tab-pane fade show active" id="kategorien" role="tabpanel" aria-labelledby="kategorien-tab">
             <!-- Bestehende Kategorien -->
             <div class="card">
                 <div class="card-header">
@@ -705,7 +705,7 @@ if(isset($_POST["action"]) && $_POST["action"] == "delete_laufend") {
         </div>
 
         <!-- ========== TAB: LAUFENDE KOSTEN ========== -->
-        <div class="tab-pane fade" id="laufend" role="tabpanel">
+        <div class="tab-pane fade" id="laufend" role="tabpanel" aria-labelledby="laufend-tab">
             <!-- Bestehende laufende Kosten -->
             <div class="card">
                 <div class="card-header">
@@ -1074,7 +1074,7 @@ function deleteLaufend(id) {
         </div>
 
         <!-- ========== TAB: KONTEN ========== -->
-        <div class="tab-pane fade" id="konten" role="tabpanel">
+        <div class="tab-pane fade" id="konten" role="tabpanel" aria-labelledby="konten-tab">
             <!-- Bestehende Konten -->
             <div class="card">
                 <div class="card-header">
@@ -1106,10 +1106,16 @@ function deleteLaufend(id) {
                                     echo("<td>".number_format($row["Grenze"], 2, ',', '.')." €</td>");
                                     echo("<td>");
                                     echo("<div class=\"action-buttons\">");
-                                    echo("<button class=\"btn btn-sm btn-primary\" onclick=\"editKonto(".$row["id"].", '".$row["Bez"]."', ".$row["Grenze"].")\">Bearbeiten</button>");
+                                    echo("<button class=\"btn btn-sm btn-primary\" onclick=\"editKonto(".$row["id"].", '".addslashes($row["Bez"])."', ".$row["Grenze"].")\">Bearbeiten</button>");
                                     echo("<button class=\"btn btn-sm btn-danger\" onclick=\"deleteKonto(".$row["id"].")\">Löschen</button>");
                                     echo("</div>");
                                     echo("</td>");
                                     echo("</tr>");
                                 }
+                                ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
                                 ?>
