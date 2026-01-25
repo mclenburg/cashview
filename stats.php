@@ -924,7 +924,7 @@ if ($maxMonthlyValue == 0) $maxMonthlyValue = 1;
         }
 
         .trend-bar-projected {
-            background: linear-gradient(90deg, rgba(40, 167, 69, 0.3) 0%, rgba(32, 201, 151, 0.3) 100%);
+            background: linear-gradient(90deg, rgba(40, 167, 69, 0.6) 0%, rgba(32, 201, 151, 0.6) 100%);
             opacity: 0.6;
             z-index: 1;
         }
