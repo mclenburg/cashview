@@ -334,28 +334,84 @@ function calculateTrendAnalysis($monthlyData, $connection, $mandantId) {
     $daysInMonth = (int)date('t'); // Gesamtzahl Tage im Monat
     $remainingDays = $daysInMonth - $currentDay;
 
-    // Durchschnittliche Tagesausgaben der letzten beiden Monate berechnen
     $lastMonth = $monthlyData[1];
     $monthBeforeLast = $monthlyData[2];
 
-    // Tage im letzten und vorletzten Monat
-    $daysLastMonth = (int)date('t', strtotime($lastMonth['startDate']));
-    $daysMonthBeforeLast = (int)date('t', strtotime($monthBeforeLast['startDate']));
+    // Wenn keine verbleibenden Tage, direkt zurückgeben
+    if ($remainingDays <= 0) {
+        $average = ($lastMonth['total'] + $monthBeforeLast['total']) / 2;
+        $trendPercent = $average > 0 ? (($currentMonthData['total'] - $average) / $average * 100) : 0;
 
-    // Durchschnittliche Tagesausgaben der letzten beiden Monate
-    $avgDailyLastMonth = $daysLastMonth > 0 ? $lastMonth['total'] / $daysLastMonth : 0;
-    $avgDailyMonthBeforeLast = $daysMonthBeforeLast > 0 ? $monthBeforeLast['total'] / $daysMonthBeforeLast : 0;
-    $avgDailyExpenses = ($avgDailyLastMonth + $avgDailyMonthBeforeLast) / 2;
+        return array(
+            'average' => $average,
+            'current' => $currentMonthData['total'],
+            'projected' => $currentMonthData['total'],
+            'percent' => $trendPercent,
+            'remainingDays' => 0,
+            'avgDailyExpenses' => 0
+        );
+    }
 
-    // Hochrechnung für verbleibende Tage
-    $projectedRemainingExpenses = $avgDailyExpenses * $remainingDays;
-    $projectedCurrentMonth = $currentMonthData['total'] + $projectedRemainingExpenses;
+    // Berechne Ausgaben der letzten X Tage aus den Vormonaten
+    // X = verbleibende Tage im aktuellen Monat
+    $currentYear = date('Y');
+    $currentMonth = date('n');
 
-    // Durchschnitt der letzten beiden Monate (ohne aktuellen)
+    // Letzter Monat: Hole die letzten X Tage
+    $lastMonthYear = $currentMonth == 1 ? $currentYear - 1 : $currentYear;
+    $lastMonthNum = $currentMonth == 1 ? 12 : $currentMonth - 1;
+    $daysInLastMonth = (int)date('t', mktime(0, 0, 0, $lastMonthNum, 1, $lastMonthYear));
+
+    $startDayLastMonth = max(1, $daysInLastMonth - $remainingDays + 1);
+    $startDateLastMonth = date('Y-m-d', mktime(0, 0, 0, $lastMonthNum, $startDayLastMonth, $lastMonthYear));
+    $endDateLastMonth = date('Y-m-t', mktime(0, 0, 0, $lastMonthNum, 1, $lastMonthYear));
+
+    // Vorletzter Monat: Hole die letzten X Tage
+    $monthBeforeLastNum = $lastMonthNum == 1 ? 12 : $lastMonthNum - 1;
+    $monthBeforeLastYear = $lastMonthNum == 1 ? $lastMonthYear - 1 : $lastMonthYear;
+    $daysInMonthBeforeLast = (int)date('t', mktime(0, 0, 0, $monthBeforeLastNum, 1, $monthBeforeLastYear));
+
+    $startDayMonthBeforeLast = max(1, $daysInMonthBeforeLast - $remainingDays + 1);
+    $startDateMonthBeforeLast = date('Y-m-d', mktime(0, 0, 0, $monthBeforeLastNum, $startDayMonthBeforeLast, $monthBeforeLastYear));
+    $endDateMonthBeforeLast = date('Y-m-t', mktime(0, 0, 0, $monthBeforeLastNum, 1, $monthBeforeLastYear));
+
+    // Ausgaben der letzten X Tage vom letzten Monat
+    $queryLastMonth = "SELECT SUM(wert) as total
+                       FROM transaktionen
+                       WHERE manId = ?
+                       AND wert > 0
+                       AND DATE(Datum) >= ?
+                       AND DATE(Datum) <= ?";
+
+    $stmt = mysqli_prepare($connection, $queryLastMonth);
+    mysqli_stmt_bind_param($stmt, "iss", $mandantId, $startDateLastMonth, $endDateLastMonth);
+    mysqli_stmt_execute($stmt);
+    $result = mysqli_stmt_get_result($stmt);
+    $row = mysqli_fetch_assoc($result);
+    $expensesLastMonth = $row['total'] ? floatval($row['total']) : 0;
+
+    // Ausgaben der letzten X Tage vom vorletzten Monat
+    $stmtMonthBefore = mysqli_prepare($connection, $queryLastMonth);
+    mysqli_stmt_bind_param($stmtMonthBefore, "iss", $mandantId, $startDateMonthBeforeLast, $endDateMonthBeforeLast);
+    mysqli_stmt_execute($stmtMonthBefore);
+    $resultMonthBefore = mysqli_stmt_get_result($stmtMonthBefore);
+    $rowMonthBefore = mysqli_fetch_assoc($resultMonthBefore);
+    $expensesMonthBeforeLast = $rowMonthBefore['total'] ? floatval($rowMonthBefore['total']) : 0;
+
+    // Durchschnitt der letzten X Tage aus beiden Monaten
+    $avgExpensesRemainingDays = ($expensesLastMonth + $expensesMonthBeforeLast) / 2;
+
+    // Hochrechnung für den aktuellen Monat
+    $projectedCurrentMonth = $currentMonthData['total'] + $avgExpensesRemainingDays;
+
+    // Durchschnitt der letzten beiden kompletten Monate (für Vergleich)
     $average = ($lastMonth['total'] + $monthBeforeLast['total']) / 2;
 
-    // Trend berechnen
+    // Trend berechnen (basierend auf Hochrechnung)
     $trendPercent = $average > 0 ? (($projectedCurrentMonth - $average) / $average * 100) : 0;
+
+    // Durchschnittliche Tagesausgaben (nur für Anzeige)
+    $avgDailyExpenses = $remainingDays > 0 ? $avgExpensesRemainingDays / $remainingDays : 0;
 
     return array(
         'average' => $average,
