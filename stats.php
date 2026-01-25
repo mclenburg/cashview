@@ -327,17 +327,43 @@ function prepareChartData($result) {
     );
 }
 
-function calculateTrendAnalysis($monthlyData) {
-    $totals = array_column($monthlyData, 'total');
-    $average = array_sum($totals) / count($totals);
-    $currentPeriod = $monthlyData[0]['total'];
+function calculateTrendAnalysis($monthlyData, $connection, $mandantId) {
+    // Aktuellen Monat hochrechnen basierend auf bisherigen Ausgaben
+    $currentMonthData = $monthlyData[0];
+    $currentDay = (int)date('d'); // Aktueller Tag im Monat
+    $daysInMonth = (int)date('t'); // Gesamtzahl Tage im Monat
+    $remainingDays = $daysInMonth - $currentDay;
 
-    $trendPercent = $average > 0 ? (($currentPeriod - $average) / $average * 100) : 0;
+    // Durchschnittliche Tagesausgaben der letzten beiden Monate berechnen
+    $lastMonth = $monthlyData[1];
+    $monthBeforeLast = $monthlyData[2];
+
+    // Tage im letzten und vorletzten Monat
+    $daysLastMonth = (int)date('t', strtotime($lastMonth['startDate']));
+    $daysMonthBeforeLast = (int)date('t', strtotime($monthBeforeLast['startDate']));
+
+    // Durchschnittliche Tagesausgaben der letzten beiden Monate
+    $avgDailyLastMonth = $daysLastMonth > 0 ? $lastMonth['total'] / $daysLastMonth : 0;
+    $avgDailyMonthBeforeLast = $daysMonthBeforeLast > 0 ? $monthBeforeLast['total'] / $daysMonthBeforeLast : 0;
+    $avgDailyExpenses = ($avgDailyLastMonth + $avgDailyMonthBeforeLast) / 2;
+
+    // Hochrechnung für verbleibende Tage
+    $projectedRemainingExpenses = $avgDailyExpenses * $remainingDays;
+    $projectedCurrentMonth = $currentMonthData['total'] + $projectedRemainingExpenses;
+
+    // Durchschnitt der letzten beiden Monate (ohne aktuellen)
+    $average = ($lastMonth['total'] + $monthBeforeLast['total']) / 2;
+
+    // Trend berechnen
+    $trendPercent = $average > 0 ? (($projectedCurrentMonth - $average) / $average * 100) : 0;
 
     return array(
         'average' => $average,
-        'current' => $currentPeriod,
-        'percent' => $trendPercent
+        'current' => $currentMonthData['total'],
+        'projected' => $projectedCurrentMonth,
+        'percent' => $trendPercent,
+        'remainingDays' => $remainingDays,
+        'avgDailyExpenses' => $avgDailyExpenses
     );
 }
 
@@ -345,17 +371,33 @@ function calculateTrendAnalysis($monthlyData) {
 // HTML-AUSGABE FUNKTIONEN
 // ============================================================================
 
-function renderTrendBar($period, $maxValue) {
-    $barWidth = $maxValue > 0 ? ($period['total'] / $maxValue * 100) : 0;
+function renderTrendBar($period, $maxValue, $trendAnalysis) {
+    $actualValue = $period['total'];
     $barClass = $period['isCurrentMonth'] ? 'current-month' : '';
 
     echo '<div class="trend-bar-wrapper">';
     echo '<div class="trend-month">';
     echo '<span>' . htmlspecialchars($period['period']) . '</span>';
-    echo '<span class="trend-amount">' . number_format($period['total'], 2, ',', '.') . ' €</span>';
+    echo '<span class="trend-amount">' . number_format($actualValue, 2, ',', '.') . ' €</span>';
     echo '</div>';
     echo '<div class="trend-bar-container">';
-    echo '<div class="trend-bar ' . $barClass . '" style="width: ' . $barWidth . '%"></div>';
+
+    // Für den aktuellen Monat: Zwei Balken (transparent + solid)
+    if ($period['isCurrentMonth'] && $trendAnalysis['remainingDays'] > 0) {
+        $projectedValue = $trendAnalysis['projected'];
+        $actualWidth = $maxValue > 0 ? ($actualValue / $maxValue * 100) : 0;
+        $projectedWidth = $maxValue > 0 ? ($projectedValue / $maxValue * 100) : 0;
+
+        // Transparenter Balken für Prognose (im Hintergrund)
+        echo '<div class="trend-bar trend-bar-projected" style="width: ' . $projectedWidth . '%"></div>';
+        // Solider Balken für tatsächliche Ausgaben (im Vordergrund)
+        echo '<div class="trend-bar trend-bar-actual" style="width: ' . $actualWidth . '%"></div>';
+    } else {
+        // Normale Monate: Ein solider Balken
+        $barWidth = $maxValue > 0 ? ($actualValue / $maxValue * 100) : 0;
+        echo '<div class="trend-bar ' . $barClass . '" style="width: ' . $barWidth . '%"></div>';
+    }
+
     echo '</div>';
     echo '</div>';
 }
@@ -363,27 +405,40 @@ function renderTrendBar($period, $maxValue) {
 function renderTrendSummary($trendAnalysis) {
     $percent = $trendAnalysis['percent'];
     $average = $trendAnalysis['average'];
+    $projected = $trendAnalysis['projected'];
+    $current = $trendAnalysis['current'];
+    $remainingDays = $trendAnalysis['remainingDays'];
 
     echo '<div class="trend-summary">';
     echo '<h6>Trend-Analyse</h6>';
     echo '<div>';
-    echo '<div>Durchschnitt (3 Monate): <strong>' . number_format($average, 2, ',', '.') . ' €</strong></div>';
+
+    // Hochrechnungs-Info anzeigen
+    if ($remainingDays > 0) {
+        echo '<div style="margin-bottom: 1rem; font-size: 0.9rem; color: #666;">';
+        echo 'Bisher: <strong>' . number_format($current, 2, ',', '.') . ' €</strong> ';
+        echo '| Hochrechnung Monatsende: <strong>' . number_format($projected, 2, ',', '.') . ' €</strong>';
+        echo '<br><small>(noch ' . $remainingDays . ' Tage, basierend auf Ø-Tagesausgaben der letzten 2 Monate)</small>';
+        echo '</div>';
+    }
+
+    echo '<div>Durchschnitt (letzte 2 Monate): <strong>' . number_format($average, 2, ',', '.') . ' €</strong></div>';
 
     if (abs($percent) < 5) {
         echo '<div class="trend-indicator trend-neutral">';
         echo '≈ ' . number_format(abs($percent), 1) . '% Stabil';
         echo '</div>';
-        echo '<p style="margin-top: 1rem; color: #666; font-size: 0.9rem;">Deine Ausgaben sind stabil.</p>';
+        echo '<p style="margin-top: 1rem; color: #666; font-size: 0.9rem;">Deine hochgerechneten Ausgaben sind stabil.</p>';
     } elseif ($percent > 0) {
         echo '<div class="trend-indicator trend-up">';
         echo '↑ +' . number_format($percent, 1) . '% Höher';
         echo '</div>';
-        echo '<p style="margin-top: 1rem; color: #666; font-size: 0.9rem;">Du gibst mehr aus als im Durchschnitt der letzten 3 Monate.</p>';
+        echo '<p style="margin-top: 1rem; color: #666; font-size: 0.9rem;">Du wirst voraussichtlich mehr ausgeben als im Durchschnitt der letzten 2 Monate.</p>';
     } else {
         echo '<div class="trend-indicator trend-down">';
         echo '↓ ' . number_format($percent, 1) . '% Niedriger';
         echo '</div>';
-        echo '<p style="margin-top: 1rem; color: #666; font-size: 0.9rem;">Gut gemacht! Du gibst weniger aus als im Durchschnitt.</p>';
+        echo '<p style="margin-top: 1rem; color: #666; font-size: 0.9rem;">Gut gemacht! Du wirst voraussichtlich weniger ausgeben als im Durchschnitt.</p>';
     }
 
     echo '</div>';
@@ -443,10 +498,15 @@ $lastTransactions = getLastTransactions($connection, $mandantId, 3);
 $chartDataAll = prepareChartData($categoryExpensesAll);
 $chartData30Days = prepareChartData($categoryExpenses30Days);
 $balanceHistory = calculateBalanceHistory($dailyExpenses, $balance30DaysAgo);
-$trendAnalysis = calculateTrendAnalysis($monthlyComparison);
+$trendAnalysis = calculateTrendAnalysis($monthlyComparison, $connection, $mandantId);
 
-// Maximalen Wert für Trend-Balken berechnen
-$maxMonthlyValue = max(array_column($monthlyComparison, 'total'));
+// Maximalen Wert für Trend-Balken berechnen (inkl. Prognose für Skalierung)
+$maxMonthlyValue = max(
+    $monthlyComparison[0]['total'],
+    $monthlyComparison[1]['total'],
+    $monthlyComparison[2]['total'],
+    $trendAnalysis['projected']
+);
 if ($maxMonthlyValue == 0) $maxMonthlyValue = 1;
 
 ?>
@@ -798,10 +858,24 @@ if ($maxMonthlyValue == 0) $maxMonthlyValue = 1;
             color: white;
             font-size: 0.85rem;
             font-weight: bold;
+            position: absolute;
+            left: 0;
+            top: 0;
         }
 
         .trend-bar.current-month {
             background: linear-gradient(90deg, #28a745 0%, #20c997 100%);
+        }
+
+        .trend-bar-projected {
+            background: linear-gradient(90deg, rgba(40, 167, 69, 0.3) 0%, rgba(32, 201, 151, 0.3) 100%);
+            opacity: 0.6;
+            z-index: 1;
+        }
+
+        .trend-bar-actual {
+            background: linear-gradient(90deg, #28a745 0%, #20c997 100%);
+            z-index: 2;
         }
 
         .trend-summary {
@@ -870,6 +944,14 @@ if ($maxMonthlyValue == 0) $maxMonthlyValue = 1;
                 background: #2a2a2a;
             }
 
+            .trend-bar-projected {
+                background: linear-gradient(90deg, rgba(81, 207, 102, 0.3) 0%, rgba(32, 201, 151, 0.3) 100%);
+            }
+
+            .trend-bar-actual {
+                background: linear-gradient(90deg, #51cf66 0%, #20c997 100%);
+            }
+
             .trend-up {
                 color: #ff6b6b;
                 background: #4a2020;
@@ -915,7 +997,7 @@ if ($maxMonthlyValue == 0) $maxMonthlyValue = 1;
                 <div class="trend-container">
                     <?php
                     foreach ($monthlyComparison as $period) {
-                        renderTrendBar($period, $maxMonthlyValue);
+                        renderTrendBar($period, $maxMonthlyValue, $trendAnalysis);
                     }
 
                     renderTrendSummary($trendAnalysis);
