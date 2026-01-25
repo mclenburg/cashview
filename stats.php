@@ -1,9 +1,461 @@
+<?php
+// ============================================================================
+// CashView - Statistik Dashboard
+// ============================================================================
+
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
+// ============================================================================
+// KONFIGURATION & INITIALISIERUNG
+// ============================================================================
+
+class DatabaseConfig {
+    const HOST = '192.168.5.103';
+    const USER = 'cashview';
+    const PASSWORD = 'cash123';
+    const DATABASE = 'cashview';
+}
+
+class DateHelper {
+    public static function getDaysInMonth() {
+        return date("t");
+    }
+
+    public static function getCurrentDay() {
+        return date("d");
+    }
+
+    public static function getRemainingDays() {
+        return self::getDaysInMonth() - self::getCurrentDay() + 1;
+    }
+}
+
+// ============================================================================
+// DATENBANKVERBINDUNG
+// ============================================================================
+
+function connectToDatabase() {
+    $connection = mysqli_connect(
+        DatabaseConfig::HOST,
+        DatabaseConfig::USER,
+        DatabaseConfig::PASSWORD,
+        DatabaseConfig::DATABASE
+    );
+
+    if (!$connection) {
+        die("ERROR: Datenbankverbindung fehlgeschlagen.");
+    }
+
+    return $connection;
+}
+
+// ============================================================================
+// MANDANTEN-VALIDIERUNG
+// ============================================================================
+
+function getMandantId() {
+    if (isset($_POST["manId"])) {
+        return (int)$_POST["manId"];
+    }
+
+    if (isset($_GET["manId"])) {
+        return (int)$_GET["manId"];
+    }
+
+    die("ERROR: Mandanten-ID nicht übergeben</body></html>");
+}
+
+// ============================================================================
+// DATENBANKABFRAGEN
+// ============================================================================
+
+function calculateAvailableBalance($connection, $mandantId) {
+    $query = "SELECT Betrag, KtoID
+              FROM Initialwerte
+              INNER JOIN Konten ON Konten.id = KtoID
+              WHERE Konten.manId = ?";
+
+    $stmt = mysqli_prepare($connection, $query);
+    mysqli_stmt_bind_param($stmt, "i", $mandantId);
+    mysqli_stmt_execute($stmt);
+    $result = mysqli_stmt_get_result($stmt);
+
+    $totalBalance = 0;
+
+    while ($row = mysqli_fetch_assoc($result)) {
+        $accountBalance = $row["Betrag"];
+        $accountId = $row["KtoID"];
+
+        // Transaktionen für dieses Konto abziehen
+        $transQuery = "SELECT Wert FROM transaktionen WHERE KtoID = ? AND manId = ?";
+        $transStmt = mysqli_prepare($connection, $transQuery);
+        mysqli_stmt_bind_param($transStmt, "ii", $accountId, $mandantId);
+        mysqli_stmt_execute($transStmt);
+        $transResult = mysqli_stmt_get_result($transStmt);
+
+        while ($transRow = mysqli_fetch_assoc($transResult)) {
+            $accountBalance -= $transRow["Wert"];
+        }
+
+        if ($accountBalance > 0) {
+            $totalBalance += $accountBalance;
+        }
+    }
+
+    return $totalBalance;
+}
+
+function getInitialBalance($connection, $mandantId) {
+    $query = "SELECT SUM(Betrag) as wert
+              FROM Initialwerte
+              INNER JOIN Konten ON Initialwerte.KtoId = Konten.id
+              WHERE Konten.manId = ?";
+
+    $stmt = mysqli_prepare($connection, $query);
+    mysqli_stmt_bind_param($stmt, "i", $mandantId);
+    mysqli_stmt_execute($stmt);
+    $result = mysqli_stmt_get_result($stmt);
+
+    return mysqli_fetch_assoc($result)["wert"];
+}
+
+function getTransactionsUntilDate($connection, $mandantId, $daysBack = 30) {
+    $query = "SELECT SUM(wert) as wert
+              FROM transaktionen
+              WHERE DATE(Datum) <= DATE(DATE_SUB(CURRENT_DATE(), INTERVAL ? DAY))
+              AND manId = ?";
+
+    $stmt = mysqli_prepare($connection, $query);
+    mysqli_stmt_bind_param($stmt, "ii", $daysBack, $mandantId);
+    mysqli_stmt_execute($stmt);
+    $result = mysqli_stmt_get_result($stmt);
+
+    return mysqli_fetch_assoc($result)["wert"];
+}
+
+function getCategoryExpensesAll($connection, $mandantId) {
+    $query = "SELECT SUM(trans.wert) as summe, kat.bez, kat.ID, kat.statscolor
+              FROM transaktionen trans
+              LEFT OUTER JOIN kategorien kat ON trans.katID = kat.ID
+              WHERE wert > 0
+              AND trans.manId = ?
+              AND (kat.manId = 0 OR kat.manId = ?)
+              GROUP BY katID
+              ORDER BY sortorder";
+
+    $stmt = mysqli_prepare($connection, $query);
+    mysqli_stmt_bind_param($stmt, "ii", $mandantId, $mandantId);
+    mysqli_stmt_execute($stmt);
+
+    return mysqli_stmt_get_result($stmt);
+}
+
+function getCategoryExpensesLast30Days($connection, $mandantId) {
+    $query = "SELECT SUM(trans.wert) as summe, kat.bez, kat.statscolor
+              FROM transaktionen trans
+              LEFT OUTER JOIN kategorien kat ON trans.katID = kat.ID
+              WHERE wert > 0
+              AND trans.manId = ?
+              AND trans.Datum > DATE_SUB(CURRENT_DATE(), INTERVAL 30 DAY)
+              AND (kat.manId = 0 OR kat.manId = ?)
+              GROUP BY katID
+              ORDER BY sortorder";
+
+    $stmt = mysqli_prepare($connection, $query);
+    mysqli_stmt_bind_param($stmt, "ii", $mandantId, $mandantId);
+    mysqli_stmt_execute($stmt);
+
+    return mysqli_stmt_get_result($stmt);
+}
+
+function getCategoryBreakdown30Days($connection, $mandantId) {
+    $query = "SELECT SUM(t.wert) as wert, k.bez as kategorie
+              FROM transaktionen t
+              INNER JOIN kategorien k ON t.katID = k.ID
+              WHERE DATE(t.Datum) >= DATE(DATE_SUB(CURRENT_DATE(), INTERVAL 30 DAY))
+              AND k.bez != 'Gehalt'
+              AND t.manId = ?
+              AND (k.manId = 0 OR k.manId = ?)
+              GROUP BY k.bez
+              ORDER BY k.sortorder";
+
+    $stmt = mysqli_prepare($connection, $query);
+    mysqli_stmt_bind_param($stmt, "ii", $mandantId, $mandantId);
+    mysqli_stmt_execute($stmt);
+
+    return mysqli_stmt_get_result($stmt);
+}
+
+function getMonthlyComparison($connection, $mandantId) {
+    $monthlyData = array();
+
+    $currentYear = date('Y');
+    $currentMonth = date('n');
+
+    $monthNames = array(
+        1 => 'Januar', 2 => 'Februar', 3 => 'März', 4 => 'April',
+        5 => 'Mai', 6 => 'Juni', 7 => 'Juli', 8 => 'August',
+        9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Dezember'
+    );
+
+    for ($i = 0; $i < 3; $i++) {
+        $targetMonth = $currentMonth - $i;
+        $targetYear = $currentYear;
+
+        // Jahreswechsel berücksichtigen
+        while ($targetMonth < 1) {
+            $targetMonth += 12;
+            $targetYear--;
+        }
+
+        $firstDay = date('Y-m-01', mktime(0, 0, 0, $targetMonth, 1, $targetYear));
+        $lastDay = date('Y-m-t', mktime(0, 0, 0, $targetMonth, 1, $targetYear));
+
+        $periodName = $monthNames[$targetMonth] . " " . $targetYear;
+        if ($i == 0) {
+            $periodName .= " (aktuell)";
+        }
+
+        $query = "SELECT SUM(wert) as total
+                  FROM transaktionen
+                  WHERE manId = ?
+                  AND wert > 0
+                  AND DATE(Datum) >= ?
+                  AND DATE(Datum) <= ?";
+
+        $stmt = mysqli_prepare($connection, $query);
+        mysqli_stmt_bind_param($stmt, "iss", $mandantId, $firstDay, $lastDay);
+        mysqli_stmt_execute($stmt);
+        $result = mysqli_stmt_get_result($stmt);
+        $row = mysqli_fetch_assoc($result);
+
+        $monthlyData[] = array(
+            'period' => $periodName,
+            'total' => $row['total'] ? floatval($row['total']) : 0,
+            'startDate' => $firstDay,
+            'endDate' => $lastDay,
+            'isCurrentMonth' => ($i == 0)
+        );
+    }
+
+    return $monthlyData;
+}
+
+function getDailyExpenses($connection, $mandantId) {
+    $query = "SELECT SUM(trans.wert) as summe, DATE(trans.Datum) as datum
+              FROM transaktionen trans
+              WHERE DATE(trans.Datum) > DATE(DATE_SUB(CURRENT_DATE(), INTERVAL 30 DAY))
+              AND manId = ?
+              GROUP BY DATE(Datum)
+              ORDER BY Datum";
+
+    $stmt = mysqli_prepare($connection, $query);
+    mysqli_stmt_bind_param($stmt, "i", $mandantId);
+    mysqli_stmt_execute($stmt);
+
+    return mysqli_stmt_get_result($stmt);
+}
+
+function getLastTransactions($connection, $mandantId, $limit = 3) {
+    $query = "SELECT t.Wert, t.Datum, k.bez as Kategorie, ko.Bez as Konto
+              FROM transaktionen t
+              LEFT JOIN kategorien k ON t.katID = k.ID
+              LEFT JOIN Konten ko ON t.KtoID = ko.id
+              WHERE t.manId = ?
+              ORDER BY t.Datum DESC
+              LIMIT ?";
+
+    $stmt = mysqli_prepare($connection, $query);
+    mysqli_stmt_bind_param($stmt, "ii", $mandantId, $limit);
+    mysqli_stmt_execute($stmt);
+
+    return mysqli_stmt_get_result($stmt);
+}
+
+// ============================================================================
+// DATENVERARBEITUNG
+// ============================================================================
+
+function calculateBalanceHistory($dailyExpenses, $initialBalance) {
+    $expensesByDate = array();
+
+    while ($row = mysqli_fetch_assoc($dailyExpenses)) {
+        $expensesByDate[$row["datum"]] = $row["summe"];
+    }
+
+    $balanceHistory = array();
+    $dates = array();
+    $currentBalance = $initialBalance;
+
+    for ($day = 30; $day >= 0; $day--) {
+        $date = new DateTime("-" . $day . " days");
+        $dateStr = $date->format("Y-m-d");
+        $dateLabel = $date->format("d.m.");
+
+        if (isset($expensesByDate[$dateStr])) {
+            $currentBalance -= $expensesByDate[$dateStr];
+        }
+
+        $dates[] = $dateLabel;
+        $balanceHistory[] = round($currentBalance, 2);
+    }
+
+    return array(
+        'dates' => $dates,
+        'balances' => $balanceHistory
+    );
+}
+
+function prepareChartData($result) {
+    $values = array();
+    $labels = array();
+    $colors = array();
+
+    while ($row = mysqli_fetch_assoc($result)) {
+        $values[] = floatval($row["summe"]);
+        $labels[] = $row["bez"];
+
+        $colorParts = explode(",", $row["statscolor"]);
+        $colors[] = "rgba(" . $colorParts[0] . "," . $colorParts[1] . "," . $colorParts[2] . ", 0.8)";
+    }
+
+    return array(
+        'values' => $values,
+        'labels' => $labels,
+        'colors' => $colors
+    );
+}
+
+function calculateTrendAnalysis($monthlyData) {
+    $totals = array_column($monthlyData, 'total');
+    $average = array_sum($totals) / count($totals);
+    $currentPeriod = $monthlyData[0]['total'];
+
+    $trendPercent = $average > 0 ? (($currentPeriod - $average) / $average * 100) : 0;
+
+    return array(
+        'average' => $average,
+        'current' => $currentPeriod,
+        'percent' => $trendPercent
+    );
+}
+
+// ============================================================================
+// HTML-AUSGABE FUNKTIONEN
+// ============================================================================
+
+function renderTrendBar($period, $maxValue) {
+    $barWidth = $maxValue > 0 ? ($period['total'] / $maxValue * 100) : 0;
+    $barClass = $period['isCurrentMonth'] ? 'current-month' : '';
+
+    echo '<div class="trend-bar-wrapper">';
+    echo '<div class="trend-month">';
+    echo '<span>' . htmlspecialchars($period['period']) . '</span>';
+    echo '<span class="trend-amount">' . number_format($period['total'], 2, ',', '.') . ' €</span>';
+    echo '</div>';
+    echo '<div class="trend-bar-container">';
+    echo '<div class="trend-bar ' . $barClass . '" style="width: ' . $barWidth . '%"></div>';
+    echo '</div>';
+    echo '</div>';
+}
+
+function renderTrendSummary($trendAnalysis) {
+    $percent = $trendAnalysis['percent'];
+    $average = $trendAnalysis['average'];
+
+    echo '<div class="trend-summary">';
+    echo '<h6>Trend-Analyse</h6>';
+    echo '<div>';
+    echo '<div>Durchschnitt (3 Monate): <strong>' . number_format($average, 2, ',', '.') . ' €</strong></div>';
+
+    if (abs($percent) < 5) {
+        echo '<div class="trend-indicator trend-neutral">';
+        echo '≈ ' . number_format(abs($percent), 1) . '% Stabil';
+        echo '</div>';
+        echo '<p style="margin-top: 1rem; color: #666; font-size: 0.9rem;">Deine Ausgaben sind stabil.</p>';
+    } elseif ($percent > 0) {
+        echo '<div class="trend-indicator trend-up">';
+        echo '↑ +' . number_format($percent, 1) . '% Höher';
+        echo '</div>';
+        echo '<p style="margin-top: 1rem; color: #666; font-size: 0.9rem;">Du gibst mehr aus als im Durchschnitt der letzten 3 Monate.</p>';
+    } else {
+        echo '<div class="trend-indicator trend-down">';
+        echo '↓ ' . number_format($percent, 1) . '% Niedriger';
+        echo '</div>';
+        echo '<p style="margin-top: 1rem; color: #666; font-size: 0.9rem;">Gut gemacht! Du gibst weniger aus als im Durchschnitt.</p>';
+    }
+
+    echo '</div>';
+    echo '</div>';
+}
+
+function renderCategoryTable($result) {
+    while ($row = mysqli_fetch_assoc($result)) {
+        echo '<tr>';
+        echo '<td>' . htmlspecialchars($row["kategorie"]) . '</td>';
+        echo '<td>' . number_format($row["wert"], 2, ',', '.') . ' €</td>';
+        echo '</tr>';
+    }
+}
+
+function renderTransactionTable($result) {
+    while ($row = mysqli_fetch_assoc($result)) {
+        $datum = date('d.m.Y H:i', strtotime($row["Datum"]));
+        $betrag = number_format($row["Wert"], 2, ',', '.');
+        $kategorie = $row["Kategorie"] ? htmlspecialchars($row["Kategorie"]) : '-';
+        $konto = $row["Konto"] ? htmlspecialchars($row["Konto"]) : '-';
+
+        echo '<tr>';
+        echo '<td>' . $datum . '</td>';
+        echo '<td>' . $betrag . ' €</td>';
+        echo '<td>' . $kategorie . '</td>';
+        echo '<td>' . $konto . '</td>';
+        echo '</tr>';
+    }
+}
+
+// ============================================================================
+// HAUPTPROGRAMM
+// ============================================================================
+
+$mandantId = getMandantId();
+$connection = connectToDatabase();
+
+// Berechnungen durchführen
+$remainingDays = DateHelper::getRemainingDays();
+$availableBalance = calculateAvailableBalance($connection, $mandantId);
+$dailyAverage = $remainingDays > 0 ? $availableBalance / $remainingDays : 0;
+
+$initialBalance = getInitialBalance($connection, $mandantId);
+$transactionsUntil30Days = getTransactionsUntilDate($connection, $mandantId, 30);
+$balance30DaysAgo = $initialBalance - $transactionsUntil30Days;
+
+// Daten für Charts abrufen
+$categoryExpensesAll = getCategoryExpensesAll($connection, $mandantId);
+$categoryExpenses30Days = getCategoryExpensesLast30Days($connection, $mandantId);
+$categoryBreakdown = getCategoryBreakdown30Days($connection, $mandantId);
+$monthlyComparison = getMonthlyComparison($connection, $mandantId);
+$dailyExpenses = getDailyExpenses($connection, $mandantId);
+$lastTransactions = getLastTransactions($connection, $mandantId, 3);
+
+// Chart-Daten vorbereiten
+$chartDataAll = prepareChartData($categoryExpensesAll);
+$chartData30Days = prepareChartData($categoryExpenses30Days);
+$balanceHistory = calculateBalanceHistory($dailyExpenses, $balance30DaysAgo);
+$trendAnalysis = calculateTrendAnalysis($monthlyComparison);
+
+// Maximalen Wert für Trend-Balken berechnen
+$maxMonthlyValue = max(array_column($monthlyComparison, 'total'));
+if ($maxMonthlyValue == 0) $maxMonthlyValue = 1;
+
+?>
 <!DOCTYPE html>
 <html lang="de">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>CashView - Die Finanz&uuml;bersicht</title>
+    <title>CashView - Die Finanzübersicht</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdn.datatables.net/1.10.24/css/dataTables.bootstrap4.min.css">
     <link href="favicon.ico" rel="shortcut icon">
@@ -436,335 +888,126 @@
     </style>
 </head>
 <body>
-  <?php
-           error_reporting(E_ALL);
-           ini_set('display_errors', 1);
+    <div class="container">
+        <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+            <span class="navbar-brand">CashView - Statistik</span>
+            <a class="btn btn-secondary btn-back" href="index.php?manId=<?php echo $mandantId; ?>" role="button">Zurück</a>
+        </nav>
 
-           $mandant = -1;
-           if(isset($_POST["manId"]))
-           {
-             $mandant = $_POST["manId"];
-           }
-           elseif(isset($_GET["manId"])){
-             $mandant = $_GET["manId"];
-           }
-           else {
-             echo("Mandanten-ID nicht übergeben");
-             echo("</body></html>");
-             return;
-           }
-
-           $anzahl_tage = date("t");
-           $heute = date("d");
-           $resttage = $anzahl_tage - $heute + 1;
-
-  	       $name = gethostbyaddr($_SERVER['REMOTE_ADDR']);
-  		   ($GLOBALS["___mysqli_ston"] = mysqli_connect("192.168.5.103",  "cashview",  "cash123", "cashview"))  or die("ERROR connecting to database.");
-
-           // Verfügbares Guthaben berechnen (identisch zu index.php)
-           $query = "select Betrag, KtoID from Initialwerte inner join Konten on Konten.id = KtoID where Konten.manId = $mandant";
-           $result = mysqli_query($GLOBALS["___mysqli_ston"], $query) or die("$query " .mysqli_error($GLOBALS["___mysqli_ston"]));
-           $plus_kum = 0;
-
-           while($init_wert = mysqli_fetch_assoc($result)) {
-               $stand = $init_wert["Betrag"];
-               $query_trans = "select Wert from transaktionen where KtoID = " .$init_wert["KtoID"] . " and manId = $mandant";
-               $result_inner = mysqli_query($GLOBALS["___mysqli_ston"], $query_trans) OR die("Error: $query_trans " .mysqli_error($GLOBALS["___mysqli_ston"]));
-
-               while($trans_row = mysqli_fetch_assoc($result_inner)) {
-                   $stand = ($stand - $trans_row["Wert"]);
-               }
-
-               if($stand > 0) {
-                   $plus_kum += $stand;
-               }
-           }
-
-  		   $resultRest = mysqli_query($GLOBALS["___mysqli_ston"], "select sum(wert) wert from transaktionen where date(Datum) <= date(DATE_SUB(CURRENT_DATE(),INTERVAL 30 DAY)) and manId = $mandant")or die("queryRest " .mysqli_error($GLOBALS["___mysqli_ston"]));
-  		   $rest = mysqli_fetch_assoc($resultRest)["wert"];
-  		   $resultInit = mysqli_query($GLOBALS["___mysqli_ston"], "select sum(Betrag) wert from Initialwerte inner join Konten on Initialwerte.KtoId = Konten.id where Konten.manId = $mandant")or die("queryIni " .mysqli_error($GLOBALS["___mysqli_ston"]));
-           $init = mysqli_fetch_assoc($resultInit)["wert"];
-           $rest = $init - $rest;
-
-           $queryAll = "select sum(trans.wert) summe, kat.bez, kat.ID, kat.statscolor from transaktionen trans left outer join kategorien kat on trans.katID = kat.ID where wert > 0 and trans.manId = $mandant and (kat.manId = 0 OR kat.manId = $mandant) group by katID order by sortorder";
-  		   $query30 = "select sum(trans.wert) summe, kat.bez, kat.statscolor from transaktionen trans left outer join kategorien kat on trans.katID = kat.ID where wert > 0 and trans.manId = $mandant and trans.Datum > DATE_SUB(CURRENT_DATE(),INTERVAL 30 DAY) and (kat.manId = 0 OR kat.manId = $mandant) group by katID order by sortorder";
-
-           $resultAll = mysqli_query($GLOBALS["___mysqli_ston"], $queryAll)or die("$queryAll " .mysqli_error($GLOBALS["___mysqli_ston"]));
-           $result30 = mysqli_query($GLOBALS["___mysqli_ston"], $query30)or die("$query30 " .mysqli_error($GLOBALS["___mysqli_ston"]));
-
-           $querySumPerKat30 = "select sum(t.wert) wert, k.bez kategorie from transaktionen t inner join kategorien k on t.katID = k.ID where date(t.Datum) >= date(DATE_SUB(CURRENT_DATE(),INTERVAL 30 DAY)) and k.bez != 'Gehalt' and t.manId = $mandant and (k.manId = 0 OR k.manId = $mandant) group by k.bez order by k.sortorder";
-           $sumPerKat30 = mysqli_query($GLOBALS["___mysqli_ston"], $querySumPerKat30)or die("$querySumPerKat30 " .mysqli_error($GLOBALS["___mysqli_ston"]));
-
-           // 30-Tage-Perioden Vergleich
-           $monthlyComparison = array();
-           for($i = 0; $i < 3; $i++) {
-               $endDays = $i * 30;
-               $startDays = $endDays + 30;
-
-               $endDate = date('Y-m-d', strtotime("-$endDays days"));
-               $startDate = date('Y-m-d', strtotime("-$startDays days"));
-
-               if($i == 0) {
-                   $periodName = "Letzte 30 Tage";
-               } else {
-                   $periodName = "Vor " . ($i * 30) . "-" . (($i + 1) * 30) . " Tagen";
-               }
-
-               $queryMonth = "SELECT SUM(wert) as total FROM transaktionen
-                             WHERE manId = $mandant
-                             AND wert > 0
-                             AND DATE(Datum) > '$startDate'
-                             AND DATE(Datum) <= '$endDate'";
-               $resultMonth = mysqli_query($GLOBALS["___mysqli_ston"], $queryMonth);
-               $row = mysqli_fetch_assoc($resultMonth);
-
-               $monthlyComparison[] = array(
-                   'period' => $periodName,
-                   'total' => $row['total'] ? floatval($row['total']) : 0,
-                   'startDate' => $startDate,
-                   'endDate' => $endDate
-               );
-           }
-
-           $avgMonthly = array_sum(array_column($monthlyComparison, 'total')) / 3;
-           $currentPeriod = $monthlyComparison[0]['total'];
-           $trendPercent = $avgMonthly > 0 ? (($currentPeriod - $avgMonthly) / $avgMonthly * 100) : 0;
-
-           // Daten für Chart.js sammeln
-           $arrayAll = array();
-           $arrayAll_labels = array();
-           $arrayAll_colors = array();
-           while( $row = mysqli_fetch_assoc( $resultAll)){
-               $arrayAll[] = $row["summe"];
-               $arrayAll_labels[] = $row["bez"];
-               $color = explode(",", $row["statscolor"]);
-               $arrayAll_colors[] = "rgba(".$color[0].",".$color[1].",".$color[2].", 0.8)";
-           }
-
-           $array30 = array();
-           $array30_labels = array();
-           $array30_colors = array();
-           while( $row = mysqli_fetch_assoc( $result30)){
-               $array30[] = $row["summe"];
-               $array30_labels[] = $row["bez"];
-               $color = explode(",", $row["statscolor"]);
-               $array30_colors[] = "rgba(".$color[0].",".$color[1].",".$color[2].", 0.8)";
-           }
-
-           // Verlaufsdiagramm Daten
-           $queryLine = "select sum(trans.wert) summe, DATE(trans.Datum) datum from transaktionen trans WHERE date(trans.Datum) > date(DATE_SUB(CURRENT_DATE(),INTERVAL 30 DAY)) and manId = $mandant group by DATE(Datum) ORDER BY Datum";
-           $resultLine = mysqli_query($GLOBALS["___mysqli_ston"], $queryLine)or die("$queryLine " .mysqli_error($GLOBALS["___mysqli_ston"]));
-
-           $arrayLine_dates = array();
-           $arrayLine_values = array();
-           $arrayLine = array();
-           while( $row = mysqli_fetch_assoc( $resultLine)){
-             $arrayLine[$row["datum"]] = $row["summe"];
-           }
-
-           // Guthaben-Verlauf berechnen
-           $guthabenVerlauf = array();
-           $tempGuthaben = $rest;
-
-           for($dat=30; $dat>=0; $dat--) {
-               $date = new DateTime("-".$dat." days");
-               $dateStr = $date->format("Y-m-d");
-               $dateLabel = $date->format("d.m.");
-
-               if(isset($arrayLine[$dateStr])) {
-                   $tempGuthaben -= $arrayLine[$dateStr];
-               }
-
-               $arrayLine_dates[] = $dateLabel;
-               $guthabenVerlauf[] = round($tempGuthaben, 2);
-           }
-  ?>
-  <div class="container">
-  	      <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-  	        <span class="navbar-brand">CashView - Statistik</span>
-            <a class="btn btn-secondary btn-back" href="index.php?manId=<?php echo $mandant; ?>" role="button">Zurück</a>
-  	      </nav>
-
-          <!-- Verfügbar pro Tag -->
-          <div class="card">
+        <!-- Verfügbar pro Tag -->
+        <div class="card">
             <div class="card-header">
-              <h5 class="card-title">Verfügbar pro Tag</h5>
+                <h5 class="card-title">Verfügbar pro Tag</h5>
             </div>
             <div class="card-body">
-              <div class="daily-amount">
-                <?php echo(number_format(round($plus_kum/$resttage,2), 2, ',', '.') ." €"); ?>
-              </div>
-            </div>
-          </div>
-
-          <!-- Trendanalyse -->
-          <div class="card">
-            <div class="card-header">
-              <h5 class="card-title">📈 Ausgaben-Trend (3x 30-Tage-Perioden)</h5>
-            </div>
-            <div class="card-body">
-              <div class="trend-container">
-                <?php
-                  $maxValue = max(array_column($monthlyComparison, 'total'));
-                  if($maxValue == 0) $maxValue = 1;
-
-                  foreach($monthlyComparison as $index => $period) {
-                    $barWidth = ($period['total'] / $maxValue * 100);
-                    $isCurrent = $index === 0;
-                    $barClass = $isCurrent ? 'current-month' : '';
-
-                    echo('<div class="trend-bar-wrapper">');
-                    echo('<div class="trend-month">');
-                    echo('<span>' . $period['period'] . '</span>');
-                    echo('<span class="trend-amount">' . number_format($period['total'], 2, ',', '.') . ' €</span>');
-                    echo('</div>');
-                    echo('<div class="trend-bar-container">');
-                    echo('<div class="trend-bar ' . $barClass . '" style="width: ' . $barWidth . '%"></div>');
-                    echo('</div>');
-                    echo('</div>');
-                  }
-                ?>
-
-                <div class="trend-summary">
-                  <h6>Trend-Analyse</h6>
-                  <div>
-                    <div>Durchschnitt (90 Tage): <strong><?php echo number_format($avgMonthly, 2, ',', '.'); ?> €</strong></div>
-                    <?php
-                      if(abs($trendPercent) < 5) {
-                        echo('<div class="trend-indicator trend-neutral">');
-                        echo('≈ ' . number_format(abs($trendPercent), 1) . '% Stabil');
-                      } elseif($trendPercent > 0) {
-                        echo('<div class="trend-indicator trend-up">');
-                        echo('↑ +' . number_format($trendPercent, 1) . '% Höher');
-                      } else {
-                        echo('<div class="trend-indicator trend-down">');
-                        echo('↓ ' . number_format($trendPercent, 1) . '% Niedriger');
-                      }
-                      echo('</div>');
-
-                      if(abs($trendPercent) < 5) {
-                        echo('<p style="margin-top: 1rem; color: #666; font-size: 0.9rem;">Deine Ausgaben sind stabil.</p>');
-                      } elseif($trendPercent > 0) {
-                        echo('<p style="margin-top: 1rem; color: #666; font-size: 0.9rem;">Du gibst mehr aus als im Durchschnitt der letzten 90 Tage.</p>');
-                      } else {
-                        echo('<p style="margin-top: 1rem; color: #666; font-size: 0.9rem;">Gut gemacht! Du gibst weniger aus als im Durchschnitt.</p>');
-                      }
-                    ?>
-                  </div>
+                <div class="daily-amount">
+                    <?php echo number_format($dailyAverage, 2, ',', '.') . " €"; ?>
                 </div>
-              </div>
             </div>
-          </div>
+        </div>
 
-          <!-- Chart Grid -->
-          <div class="chart-grid">
+        <!-- Trendanalyse -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title">📈 Ausgaben-Trend (Monatsvergleich)</h5>
+            </div>
+            <div class="card-body">
+                <div class="trend-container">
+                    <?php
+                    foreach ($monthlyComparison as $period) {
+                        renderTrendBar($period, $maxMonthlyValue);
+                    }
+
+                    renderTrendSummary($trendAnalysis);
+                    ?>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chart Grid -->
+        <div class="chart-grid">
             <!-- Letzte 30 Tage -->
             <div class="card">
-              <div class="card-header">
-                <h5 class="card-title">Letzte 30 Tage</h5>
-              </div>
-              <div class="card-body">
-                <div class="chart-container">
-                  <canvas id="chart30Days"></canvas>
+                <div class="card-header">
+                    <h5 class="card-title">Letzte 30 Tage</h5>
                 </div>
-              </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="chart30Days"></canvas>
+                    </div>
+                </div>
             </div>
 
             <!-- Gesamt -->
             <div class="card">
-              <div class="card-header">
-                <h5 class="card-title">Gesamt</h5>
-              </div>
-              <div class="card-body">
-                <div class="chart-container">
-                  <canvas id="chartAll"></canvas>
+                <div class="card-header">
+                    <h5 class="card-title">Gesamt</h5>
                 </div>
-              </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="chartAll"></canvas>
+                    </div>
+                </div>
             </div>
 
             <!-- Verlauf -->
             <div class="card chart-full">
-              <div class="card-header">
-                <h5 class="card-title">Guthaben-Verlauf (30 Tage)</h5>
-              </div>
-              <div class="card-body">
-                <div class="chart-container chart-container-large">
-                  <canvas id="chartLine"></canvas>
+                <div class="card-header">
+                    <h5 class="card-title">Guthaben-Verlauf (30 Tage)</h5>
                 </div>
-              </div>
+                <div class="card-body">
+                    <div class="chart-container chart-container-large">
+                        <canvas id="chartLine"></canvas>
+                    </div>
+                </div>
             </div>
-          </div>
+        </div>
 
-          <!-- Kategorien Tabelle -->
-          <div class="card">
+        <!-- Kategorien Tabelle -->
+        <div class="card">
             <div class="card-header">
-              <h5 class="card-title">Aufteilung Kategorien (30 Tage)</h5>
+                <h5 class="card-title">Aufteilung Kategorien (30 Tage)</h5>
             </div>
             <div class="card-body">
-              <div class="table-responsive">
-                <table class="table table-striped" id="KatTable">
-                  <thead>
-                    <tr>
-                      <th>Kategorie</th>
-                      <th>Betrag</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <?php
-                       while( $row = mysqli_fetch_assoc( $sumPerKat30)){
-                          echo("<tr><td>".$row["kategorie"]."</td><td>".number_format($row["wert"], 2, ',', '.')." €</td></tr>");
-                       }
-                    ?>
-                  </tbody>
-                </table>
-              </div>
+                <div class="table-responsive">
+                    <table class="table table-striped" id="KatTable">
+                        <thead>
+                            <tr>
+                                <th>Kategorie</th>
+                                <th>Betrag</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php renderCategoryTable($categoryBreakdown); ?>
+                        </tbody>
+                    </table>
+                </div>
             </div>
-          </div>
+        </div>
 
-          <!-- Letzte 3 Transaktionen -->
-          <div class="card">
+        <!-- Letzte 3 Transaktionen -->
+        <div class="card">
             <div class="card-header">
-              <h5 class="card-title">Letzte Transaktionen</h5>
+                <h5 class="card-title">Letzte Transaktionen</h5>
             </div>
             <div class="card-body">
-              <div class="table-responsive">
-                <table class="table table-striped">
-                  <thead>
-                    <tr>
-                      <th>Datum</th>
-                      <th>Betrag</th>
-                      <th>Kategorie</th>
-                      <th>Konto</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <?php
-                       $queryLastTrans = "SELECT t.Wert, t.Datum, k.bez as Kategorie, ko.Bez as Konto
-                                          FROM transaktionen t
-                                          LEFT JOIN kategorien k ON t.katID = k.ID
-                                          LEFT JOIN Konten ko ON t.KtoID = ko.id
-                                          WHERE t.manId = $mandant
-                                          ORDER BY t.Datum DESC
-                                          LIMIT 3";
-                       $resultLastTrans = mysqli_query($GLOBALS["___mysqli_ston"], $queryLastTrans);
-
-                       while($row = mysqli_fetch_assoc($resultLastTrans)) {
-                           $datum = date('d.m.Y H:i', strtotime($row["Datum"]));
-                           $betrag = number_format($row["Wert"], 2, ',', '.');
-
-                           echo("<tr>");
-                           echo("<td>".$datum."</td>");
-                           echo("<td>".$betrag." €</td>");
-                           echo("<td>".($row["Kategorie"] ? $row["Kategorie"] : '-')."</td>");
-                           echo("<td>".($row["Konto"] ? $row["Konto"] : '-')."</td>");
-                           echo("</tr>");
-                       }
-                    ?>
-                  </tbody>
-                </table>
-              </div>
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Datum</th>
+                                <th>Betrag</th>
+                                <th>Kategorie</th>
+                                <th>Konto</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php renderTransactionTable($lastTransactions); ?>
+                        </tbody>
+                    </table>
+                </div>
             </div>
-          </div>
+        </div>
     </div>
 
     <script src="https://code.jquery.com/jquery-3.5.1.js"></script>
@@ -775,16 +1018,16 @@
     <script>
     // DataTable
     $(document).ready(function () {
-      $('#KatTable').DataTable({
-        "paging": false,
-        "searching": false,
-        "info": false,
-        "order": [[ 1, "desc" ]],
-        "responsive": true,
-        "language": {
-          "emptyTable": "Keine Daten verfügbar"
-        }
-      });
+        $('#KatTable').DataTable({
+            "paging": false,
+            "searching": false,
+            "info": false,
+            "order": [[ 1, "desc" ]],
+            "responsive": true,
+            "language": {
+                "emptyTable": "Keine Daten verfügbar"
+            }
+        });
     });
 
     // Chart.js Konfiguration
@@ -797,35 +1040,17 @@
     const textColor = isDarkMode ? '#ffffff' : '#666';
     const gridColor = isDarkMode ? '#444' : '#e0e0e0';
 
-    // PHP Daten für JavaScript (als Zahlen parsen!)
-    const data30 = <?php echo json_encode(array_map('floatval', $array30)); ?>;
-    const labels30 = <?php echo json_encode($array30_labels); ?>;
-    const colors30 = <?php echo json_encode($array30_colors); ?>;
+    // PHP Daten für JavaScript
+    const data30 = <?php echo json_encode($chartData30Days['values']); ?>;
+    const labels30 = <?php echo json_encode($chartData30Days['labels']); ?>;
+    const colors30 = <?php echo json_encode($chartData30Days['colors']); ?>;
 
-    const dataAll = <?php echo json_encode(array_map('floatval', $arrayAll)); ?>;
-    const labelsAll = <?php echo json_encode($arrayAll_labels); ?>;
-    const colorsAll = <?php echo json_encode($arrayAll_colors); ?>;
+    const dataAll = <?php echo json_encode($chartDataAll['values']); ?>;
+    const labelsAll = <?php echo json_encode($chartDataAll['labels']); ?>;
+    const colorsAll = <?php echo json_encode($chartDataAll['colors']); ?>;
 
-    const lineLabels = <?php echo json_encode($arrayLine_dates); ?>;
-    const lineData = <?php echo json_encode(array_map('floatval', $guthabenVerlauf)); ?>;
-
-    // Debug: Daten in Konsole ausgeben
-    console.log('30 Tage Daten:', data30);
-    console.log('30 Tage Summe:', data30.reduce((a, b) => a + b, 0));
-    console.log('Gesamt Daten:', dataAll);
-    console.log('Gesamt Summe:', dataAll.reduce((a, b) => a + b, 0));
-
-    // Funktion zum Berechnen der Prozentangaben für Legende
-    function generateLegendLabels(chart) {
-        const data = chart.data;
-        const total = data.datasets[0].data.reduce((a, b) => a + b, 0);
-
-        return data.labels.map((label, index) => {
-            const value = data.datasets[0].data[index];
-            const percentage = ((value / total) * 100).toFixed(1);
-            return label + ' (' + percentage + '%)';
-        });
-    }
+    const lineLabels = <?php echo json_encode($balanceHistory['dates']); ?>;
+    const lineData = <?php echo json_encode($balanceHistory['balances']); ?>;
 
     // Chart 1: Letzte 30 Tage (Doughnut)
     const ctx30 = document.getElementById('chart30Days').getContext('2d');
@@ -1064,7 +1289,7 @@
     // Dark Mode Watcher für dynamische Anpassung
     if (window.matchMedia) {
         window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
-            location.reload(); // Reload bei Theme-Wechsel
+            location.reload();
         });
     }
     </script>
