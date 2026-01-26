@@ -1176,17 +1176,17 @@ if ($maxMonthlyValue == 0) $maxMonthlyValue = 1;
             "columnDefs": [
                 {
                     "targets": 1,
-                    "type": "num",
-                    "render": function(data, type, row) {
-                        if (type === 'sort' || type === 'type') {
-                            // Verwende data-sort Attribut für Sortierung
-                            return parseFloat($(row[1]).attr('data-sort')) || 0;
-                        }
-                        return data;
-                    }
+                    "orderDataType": "dom-data-sort"
                 }
             ]
         });
+
+        // Custom sorting für data-sort Attribut
+        $.fn.dataTable.ext.order['dom-data-sort'] = function(settings, col) {
+            return this.api().column(col, {order:'index'}).nodes().map(function(td, i) {
+                return parseFloat($(td).attr('data-sort')) || 0;
+            });
+        };
     });
 
     // Chart.js Konfiguration
