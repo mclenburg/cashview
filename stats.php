@@ -503,9 +503,10 @@ function renderTrendSummary($trendAnalysis) {
 
 function renderCategoryTable($result) {
     while ($row = mysqli_fetch_assoc($result)) {
+        $wert = floatval($row["wert"]);
         echo '<tr>';
         echo '<td>' . htmlspecialchars($row["kategorie"]) . '</td>';
-        echo '<td>' . number_format($row["wert"], 2, ',', '.') . ' €</td>';
+        echo '<td data-sort="' . $wert . '">' . number_format($wert, 2, ',', '.') . ' €</td>';
         echo '</tr>';
     }
 }
@@ -661,6 +662,13 @@ if ($maxMonthlyValue == 0) $maxMonthlyValue = 1;
             top: 0;
             background-color: #f8f9fa;
             z-index: 10;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            #KatTable thead th {
+                background-color: #2a2a2a;
+                color: #ffffff;
+            }
         }
 
         /* DataTables Mobile */
@@ -924,7 +932,7 @@ if ($maxMonthlyValue == 0) $maxMonthlyValue = 1;
         }
 
         .trend-bar-projected {
-            background: linear-gradient(90deg, rgba(40, 167, 69, 0.6) 0%, rgba(32, 201, 151, 0.6) 100%);
+            background: linear-gradient(90deg, rgba(40, 167, 69, 0.3) 0%, rgba(32, 201, 151, 0.3) 100%);
             opacity: 0.6;
             z-index: 1;
         }
@@ -1164,7 +1172,20 @@ if ($maxMonthlyValue == 0) $maxMonthlyValue = 1;
             "responsive": true,
             "language": {
                 "emptyTable": "Keine Daten verfügbar"
-            }
+            },
+            "columnDefs": [
+                {
+                    "targets": 1,
+                    "type": "num",
+                    "render": function(data, type, row) {
+                        if (type === 'sort' || type === 'type') {
+                            // Verwende data-sort Attribut für Sortierung
+                            return parseFloat($(row[1]).attr('data-sort')) || 0;
+                        }
+                        return data;
+                    }
+                }
+            ]
         });
     });
 
